@@ -10,8 +10,8 @@ info:
     outlet dalam satu alur: pemilihan paket, penjemputan, penimbangan &
     penetapan harga, pembayaran, pencucian, dan pengantaran Kembali.
 
-    All monetary amounts are integers in the minor unit of the stated
-    currency. Clients MUST ignore unknown response fields.
+    All monetary amounts are integers in the minor unit of Indonesian Rupiah (IDR).
+    Clients MUST ignore unknown response fields.
 
 servers:
   - url: https://oceanlaundry.api/v1
@@ -468,6 +468,7 @@ components:
         totalAmount:
           type: [integer, "null"]
           example: 28000
+          currency: "IDR"
         createdAt:
           type: string
           format: date-time
@@ -500,6 +501,7 @@ components:
         amount:
           type: integer
           example: 28000
+          currency: "IDR"
         status:
           type: string
           enum: [pending, paid, failed]
@@ -520,6 +522,7 @@ components:
           type: integer
           example: 20000
           minimum: 1
+          currency: "IDR"
 
     Problem:
       type: object
