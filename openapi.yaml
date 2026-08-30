@@ -1,0 +1,585 @@
+openapi: 3.1.0
+info:
+  title: OceanLaundry API
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+  version: 0.1.0
+  description: |
+    Layanan laundry antar-jemput yang menghubungkan customer, kurir, dan staff
+    outlet dalam satu alur: pemilihan paket, penjemputan, penimbangan &
+    penetapan harga, pembayaran, pencucian, dan pengantaran Kembali.
+
+    All monetary amounts are integers in the minor unit of the stated
+    currency. Clients MUST ignore unknown response fields.
+
+servers:
+  - url: https://oceanlaundry.api/v1
+    description: Production
+  - url: http://localhost:3000/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /packages:
+    get:
+      summary: Get laundry packages
+      operationId: getPackages
+      responses:
+        "200":
+          description: List of available packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Package"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+    post:
+      summary: Create a package
+      operationId: createPackage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNewPackage"
+      responses:
+        "201":
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /packages/{packageId}:
+    get:
+      summary: Get a package
+      operationId: getPackage
+      parameters:
+        - $ref: "#/components/parameters/PackageId"
+      responses:
+        "200":
+          description: Package details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      summary: Update a package
+      operationId: updatePackage
+      parameters:
+        - $ref: "#/components/parameters/PackageId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePackage"
+      responses:
+        "200":
+          description: Updated package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders:
+    get:
+      summary: Get orders
+      operationId: getOrders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OrderStatus"
+
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+    post:
+      summary: Create an order
+      operationId: createOrder
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /orders/{orderId}:
+    get:
+      summary: Get an order
+      operationId: getOrder
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "200":
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders/{orderId}/pickup:
+    post:
+      summary: Pick up an order
+      operationId: pickupOrder
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      description: Kurir mengambil laundry dari customer.
+      responses:
+        "200":
+          description: Order picked up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /orders/{orderId}/weigh:
+    post:
+      summary: Weigh an order
+      operationId: weighOrder
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      description: Staff menimbang laundry dan menetapkan harga.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - weightGrams
+              properties:
+                weightGrams:
+                  type: integer
+                  minimum: 1
+
+      responses:
+        "200":
+          description: Order weighed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /orders/{orderId}/wash:
+    post:
+      summary: Start washing an order
+      operationId: startWashing
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      description: Staff mulai mencuci laundry.
+      responses:
+        "200":
+          description: Washing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /orders/{orderId}/ready:
+    post:
+      summary: Mark order as ready
+      operationId: markOrderReady
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      description: Staff menandai laundry sudah selesai dicuci.
+      responses:
+        "200":
+          description: Order ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /orders/{orderId}/delivery:
+    post:
+      summary: Start delivery
+      operationId: startDelivery
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      description: Kurir mengambil laundry yang sudah selesai untuk dikirim ke customer.
+      responses:
+        "200":
+          description: Delivery started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /orders/{orderId}/complete:
+    post:
+      summary: Complete delivery
+      operationId: completeDelivery
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      description: Kurir menyerahkan laundry kepada customer.
+      responses:
+        "200":
+          description: Order delivered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /payments:
+    post:
+      summary: Make a payment
+      operationId: createPayment
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "201":
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /payments/{paymentId}:
+    get:
+      summary: Get a payment
+      operationId: getPayment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        UUID version 4 in canonical hyphenated form.
+        Required on POST /v1/orders and POST /v1/payments.
+        Keys are retained for 24 hours.
+        If the same key is reused with an identical body, the server returns
+        the previously stored response without processing the request again.
+        If the same key is reused with a different body, the server returns
+        409 Conflict with type
+        https://oceanlaundry.api/problems/idempotency-key-reuse.
+      schema:
+        type: string
+        format: uuid
+
+    PackageId:
+      name: packageId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    Package:
+      type: object
+      required: [id, name, price]
+      properties:
+        id:
+          type: string
+          example: pkg_001
+        name:
+          type: string
+          example: Regular Wash
+        price:
+          type: integer
+          example: 8000
+          minimum: 0
+
+    CreateNewPackage:
+      type: object
+      required: [packageName, packagePrice]
+      properties:
+        packageName:
+          type: string
+          example: Regular Wash
+        packagePrice:
+          type: integer
+          example: 5000
+          minimum: 0
+    
+    UpdatePackage:
+      type: object
+      properties:
+        packageName:
+          type: string
+          example: Express Wash
+        packagePrice:
+          type: integer
+          example: 7000
+          minimum: 0
+        
+    OrderStatus:
+      type: string
+      enum:
+        - placed
+        - picked_up
+        - weighed
+        - awaiting_payment
+        - paid
+        - washing
+        - ready
+        - delivering
+        - completed
+
+    Order:
+      type: object
+      required:
+        - id
+        - customerId
+        - packageId
+        - pickupAddress
+        - status
+      properties:
+        id:
+          type: string
+          example: ord_001
+        customerId:
+          type: string
+          example: cus_001
+        courierId:
+          type: [string, "null"]
+          example: cur_001
+        packageId:
+          type: string
+          example: pkg_001
+        pickupAddress:
+          type: string
+          example: Jl. Kaliurang No. 10
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+          example: placed
+        weightGrams:
+          type: [integer, "null"]
+          example: 3500
+        totalAmount:
+          type: [integer, "null"]
+          example: 28000
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-08-30T10:00:00Z"
+
+    CreateOrderRequest:
+      type: object
+      required: [customerId, packageId, pickupAddress]
+      properties:
+        customerId:
+          type: string
+          example: cus_001
+        packageId:
+          type: string
+          example: pkg_001
+        pickupAddress:
+          type: string
+          example: Jln. Jembatan Baru UGM 
+
+    Payment:
+      type: object
+      required: [id, orderId, amount, status]
+      properties:
+        id:
+          type: string
+          example: pay_001
+        orderId:
+          type: string
+          example: ord_001
+        amount:
+          type: integer
+          example: 28000
+        status:
+          type: string
+          enum: [pending, paid, failed]
+          example: paid
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-08-30T10:00:00Z"
+
+    CreatePaymentRequest:
+      type: object
+      required: [orderId, amount]
+      properties:
+        orderId:
+          type: string
+          example: ord_001
+        amount:
+          type: integer
+          example: 20000
+          minimum: 1
+
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+  responses:
+    Conflict:
+      description: Request conflicts with the current state.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://oceanlaundry.api/problems/conflict
+            title: Order state conflict
+            status: 409
+            detail: The requested transition is not allowed from the current order status.
+            instance: /v1/orders/ord_001
+
+    ValidationError:
+      description: Invalid request.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://oceanlaundry.api/problems/validation-error
+            title: Request validation failed
+            status: 422
+            detail: weightGrams must be greater than 0.
+            instance: /v1/orders/ord_001/weigh
+
+    NotFound:
+      description: Resource not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://oceanlaundry.api/problems/not-found
+            title: Resource not found
+            status: 404
+            detail: The requested resource was not found.
+            instance: /v1/orders/ord_001'
+      
+    InternalServerError:
+      description: Internal server error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

@@ -1,0 +1,28 @@
+{
+  "name": "ocean-laundry",
+  "version": "1.0.0",
+  "description": "Sistem pemesanan laundry berbasis platform",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AjiPratama53/ocean-laundry.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/AjiPratama53/ocean-laundry/issues"
+  },
+  "homepage": "https://github.com/AjiPratama53/ocean-laundry#readme",
+  "devDependencies": {
+    "@redocly/cli": "^2.49.0"
+  }
+}
