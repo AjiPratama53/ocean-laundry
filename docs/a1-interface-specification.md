@@ -257,7 +257,9 @@ Command yang digunakan:
 curl.exe -i -X POST http://127.0.0.1:4010/payments -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." -H "Idempotency-Key: 0f7c1b9e-3d21-4a6f-9c05-8e2b7d41a9f0" -H "Content-Type: application/json" -d '{"orderId":"ord_001","amount":28000}'
 ```
 
-**Bukti:** tambahkan screenshot terminal hasil request yang berhasil di sini.
+**Bukti:**
+
+![Hasil request dengan idempotency key](b.6-9.png)
 
 ### Langkah 10 — Request tanpa Idempotency-Key
 
@@ -267,7 +269,9 @@ Command yang digunakan:
 curl.exe -i -X POST http://127.0.0.1:4010/payments -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." -H "Content-Type: application/json" -d '{"orderId":"ord_001","amount":28000}'
 ```
 
-**Bukti:** tambahkan screenshot terminal yang menunjukkan request ditolak karena header `Idempotency-Key` wajib.
+**Bukti:**
+
+![Hasil request tanpa idempotency key](b.6-10.png)
 
 Pengujian ini menunjukkan bahwa requirement idempotency ditegakkan pada level kontrak OpenAPI tanpa memerlukan implementasi service.
 
