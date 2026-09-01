@@ -1,8 +1,8 @@
 # OceanLaundry API - A1 Interface Specification
 
-Dokumen ini merupakan dokumentasi tertulis untuk spesifikasi antarmuka OceanLaundry API. API menggunakan OpenAPI 3.1.0 dan URI-path versioning dengan versi `v1`.
+Dokumen ini merupakan dokumentasi tertulis untuk spesifikasi interface OceanLaundry API. API menggunakan OpenAPI 3.1.0 dan URI-path versioning dengan versi `v1`.
 
-OceanLaundry merupakan layanan laundry antar-jemput yang menghubungkan customer, kurir, dan staff outlet dalam satu alur: pemilihan paket, penjemputan, penimbangan dan penetapan harga, pembayaran, pencucian, serta pengantaran kembali.
+OceanLaundry merupakan layanan laundry antar-jemput yang menghubungkan customer, kurir, dan staff outlet dalam satu alur yang terhubung: pemilihan paket(customer), penjemputan(kurir), penimbangan dan penetapan harga(staff), pembayaran(customer), pencucian(staff), serta pengantaran kembali(kurir).
 
 > **Catatan:** `info.version` (`0.1.0`) merupakan versi dokumen OpenAPI, sedangkan `/v1` merupakan versi API pada URL.
 
@@ -10,7 +10,7 @@ OceanLaundry merupakan layanan laundry antar-jemput yang menghubungkan customer,
 
 ## 1. Pemodelan Resource — B.1
 
-Resource diturunkan dari kata benda pada domain dan diuji berdasarkan tiga kriteria: **identitas**, **masa hidup**, dan **kemandirian**.
+Nama resource diturunkan dari kata benda pada domain dan diuji berdasarkan tiga kriteria: **identitas**, **masa hidup**, dan **kemandirian**.
 
 | Kandidat             | Keputusan                       | Alasan                                                                                                                                   |
 | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -107,7 +107,7 @@ Header:
 Idempotency-Key
 ```
 
-Formatnya adalah UUID versi 4 dalam bentuk kanonik dengan tanda hubung.
+Formatnya adalah UUID versi 4(dalam bentuk kanonik dengan tanda hubung).
 
 Contoh:
 
@@ -303,3 +303,4 @@ Pengujian ini menunjukkan bahwa requirement idempotency ditegakkan pada level ko
 - Status order menggunakan enumeration yang didefinisikan pada schema.
 - Klien wajib mengabaikan response fields yang tidak dikenal.
 - Mock server dipertahankan sebagai kontrak awal sampai service tersedia sehingga klien dapat berpindah antara mock dan implementasi hanya dengan mengganti base URL.
+-

@@ -467,8 +467,8 @@ components:
           example: 3500
         totalAmount:
           type: [integer, "null"]
+          description: Amount in minor unit of IDR.
           example: 28000
-          currency: "IDR"
         createdAt:
           type: string
           format: date-time
@@ -500,8 +500,8 @@ components:
           example: ord_001
         amount:
           type: integer
+          description: Amount in minor unit of IDR.
           example: 28000
-          currency: "IDR"
         status:
           type: string
           enum: [pending, paid, failed]
@@ -520,9 +520,9 @@ components:
           example: ord_001
         amount:
           type: integer
+          description: Amount in minor unit of IDR.
           example: 20000
           minimum: 1
-          currency: "IDR"
 
     Problem:
       type: object
