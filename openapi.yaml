@@ -586,3 +586,9 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+          example:
+            type: https://oceanlaundry.api/problems/internal-server-error
+            title: Internal server error
+            status: 500
+            detail: An unexpected error occurred on the server.
+            instance: /v1/orders/ord_001
