@@ -578,7 +578,7 @@ components:
             title: Resource not found
             status: 404
             detail: The requested resource was not found.
-            instance: /v1/orders/ord_001'
+            instance: /v1/orders/ord_001
       
     InternalServerError:
       description: Internal server error.
