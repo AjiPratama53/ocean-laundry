@@ -48,10 +48,12 @@ paymentsRouter.post("/payments", async (req, res) => {
   }
 
   const idempotencyKey = req.header("Idempotency-Key");
-  if (!idempotencyKey) {
+
+  // Idempotency-Key missing / malformed 
+  if (!idempotencyKey || idempotencyKey.trim().length === 0) {
     return res
-      .status(422)
-      .json(problem(422, "Idempotency-Key is required", req.originalUrl));
+      .status(400)
+      .json(problem(400, "Invalid or missing Idempotency-Key", req.originalUrl));
   }
 
   const bodyHash = hashBody(parsed.data);
