@@ -24,8 +24,15 @@
   "homepage": "https://github.com/AjiPratama53/ocean-laundry#readme",
   "devDependencies": {
     "@redocly/cli": "^2.49.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^26.4.1",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "pg": "^8.23.0",
+    "zod": "^4.5.4"
   }
 }
