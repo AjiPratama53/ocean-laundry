@@ -12,6 +12,16 @@ export interface OrderRow {
   created_at: Date;
 }
 
+export interface CreateOrderInput {
+  customer_id: string;
+  package_id: string;
+  pickup_address: string;
+  courier_id?: string | null;
+  weight_grams?: number | null;
+  total_amount?: number | null;
+  status?: string;
+}
+
 export async function findOrderById(id: string): Promise<OrderRow | null> {
   const { rows } = await pool.query<OrderRow>(
     `SELECT * FROM orders WHERE id = $1`,
@@ -45,4 +55,31 @@ export async function findOrders(params: {
     values
   );
   return rows;
+}
+
+export async function createOrder(data: CreateOrderInput): Promise<OrderRow> {
+  const { rows } = await pool.query<OrderRow>(
+    `INSERT INTO orders (
+      customer_id, 
+      package_id, 
+      pickup_address, 
+      courier_id, 
+      weight_grams, 
+      total_amount, 
+      status
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *`,
+    [
+      data.customer_id,
+      data.package_id,
+      data.pickup_address,
+      data.courier_id ?? null,
+      data.weight_grams ?? null,
+      data.total_amount ?? null,
+      data.status ?? 'pending'
+    ]
+  );
+
+  return rows[0];
 }
