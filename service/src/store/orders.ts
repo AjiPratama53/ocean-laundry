@@ -17,7 +17,7 @@ export interface OrderRow {
 export async function findOrderById(id: string): Promise<OrderRow | null> {
   const { rows } = await pool.query<OrderRow>(
     `SELECT * FROM orders WHERE id = $1`,
-    [id]
+    [id],
   );
   return rows[0] ?? null;
 }
@@ -44,7 +44,7 @@ export async function findOrders(params: {
 
   const { rows } = await pool.query<OrderRow>(
     `SELECT * FROM orders ${where} ORDER BY id ASC LIMIT $${values.length}`,
-    values
+    values,
   );
   return rows;
 }
@@ -55,12 +55,32 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderRow> {
     `INSERT INTO orders (id, customer_id, package_id, pickup_address, status)
      VALUES ($1, $2, $3, $4, 'placed')
      RETURNING *`,
-    [id, input.customerId, input.packageId, input.pickupAddress]
+    [id, input.customerId, input.packageId, input.pickupAddress],
   );
   return rows[0];
 }
 
+export async function updateOrderStatus(
+  id: string,
+  newStatus: string,
+  extra?: { weighGrams?: number; totalAmount?: number },
+) {
+  const { rows } = await pool.query<OrderRow>(
+    `UPDATE orders 
+   SET 
+    status = $1, 
+    weight_grams = COALESCE($2, weight_grams), 
+    total_amount = COALESCE($3, total_amount) 
+  WHERE id = $4 
+  RETURNING *`,
+    [newStatus, extra?.weighGrams ?? null, extra?.totalAmount ?? null, id],
+  );
+  return rows[0] ?? null;
+}
+
 export async function packageExists(packageId: string): Promise<boolean> {
-  const { rows } = await pool.query(`SELECT 1 FROM packages WHERE id = $1`, [packageId]);
+  const { rows } = await pool.query(`SELECT 1 FROM packages WHERE id = $1`, [
+    packageId,
+  ]);
   return rows.length > 0;
 }

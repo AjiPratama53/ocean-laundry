@@ -1,20 +1,26 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { createHash } from "crypto";
-import { orderIdParamSchema, getOrdersQuerySchema, createOrderSchema } from "../schemas/orders.ts";
-import { createOrder, findOrderById, findOrders, packageExists } from "../store/orders.ts";
+import {
+  orderIdParamSchema,
+  getOrdersQuerySchema,
+  createOrderSchema,
+} from "../schemas/orders.ts";
+import {
+  createOrder,
+  findOrderById,
+  findOrders,
+  packageExists,
+  updateOrderStatus,
+} from "../store/orders.ts";
 import { toOrderResponse } from "../representations/orders.ts";
 import { problem } from "../problem.ts";
 import { findKey, saveKey } from "../store/idempotency.ts";
 import { z } from "zod";
 
-
 export const ordersRouter = Router();
 
-
 function hashBody(body: unknown): string {
-  return createHash("sha256")
-  .update(JSON.stringify(body))
-  .digest("hex");
+  return createHash("sha256").update(JSON.stringify(body)).digest("hex");
 }
 
 const isUuid = (s: string) => z.string().uuid().safeParse(s).success;
@@ -69,12 +75,14 @@ ordersRouter.post("/orders", async (req, res) => {
   }
 
   const idempotencyKey = req.header("Idempotency-Key");
-  
-  // Idempotency-Key missing / malformed 
+
+  // Idempotency-Key missing / malformed
   if (!idempotencyKey || !isUuid(idempotencyKey)) {
     return res
       .status(400)
-      .json(problem(400, "Invalid or missing Idempotency-Key", req.originalUrl));
+      .json(
+        problem(400, "Invalid or missing Idempotency-Key", req.originalUrl),
+      );
   }
 
   const bodyHash = hashBody(parsed.data);
@@ -100,20 +108,26 @@ ordersRouter.post("/orders", async (req, res) => {
       .status(existingKey.responseStatus)
       .json(existingKey.responseBody);
   }
-  
+
   if (!(await packageExists(parsed.data.packageId))) {
     return res
       .status(422)
-      .json(problem(422, "packageId does not reference an existing package", req.originalUrl));
+      .json(
+        problem(
+          422,
+          "packageId does not reference an existing package",
+          req.originalUrl,
+        ),
+      );
   }
 
   try {
     // 3. Work
     const newOrder = await createOrder(parsed.data);
 
-    // 4. Representation 
+    // 4. Representation
     const responseBody = toOrderResponse(newOrder);
-    
+
     await saveKey({
       key: idempotencyKey,
       bodyHash,
@@ -132,3 +146,89 @@ ordersRouter.post("/orders", async (req, res) => {
       .json(problem(500, "Failed to create order", req.originalUrl));
   }
 });
+
+// POST /v1/orders/{orderId}/pickup
+ordersRouter.post(
+  "/orders/:orderId/pickup",
+  async (req: Request, res: Response) => {
+    const parsed = orderIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(problem(400, "Invalid order id", req.originalUrl));
+    }
+
+    const order = await findOrderById(parsed.data.orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json(problem(404, "Order not found", req.originalUrl));
+    }
+
+    if (order.status !== "placed") {
+      return res
+        .status(409)
+        .json(
+          problem(
+            409,
+            `Order status must be 'placed' to pick up, current status: ${order.status}`,
+            req.originalUrl,
+          ),
+        );
+    }
+
+    const updated = await updateOrderStatus(order.id, "picked_up");
+    return res.status(200).json(toOrderResponse(updated));
+  },
+);
+
+// POST /v1/orders/{orderId}/weigh
+ordersRouter.post(
+  "/orders/:orderId/weigh",
+  async (req: Request, res: Response) => {
+    const parsed = orderIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(problem(400, "Invalid order id", req.originalUrl));
+    }
+
+    const order = await findOrderById(parsed.data.orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json(problem(404, "Order not found", req.originalUrl));
+    }
+
+    if (order.status !== "picked_up") {
+      return res
+        .status(409)
+        .json(
+          problem(
+            409,
+            `Order status must be 'picked_up' to weigh, current status: ${order.status}`,
+            req.originalUrl,
+          ),
+        );
+    }
+
+    // For simplicity, let's assume the weight is provided in the request body as `weight_grams`.
+    const weight = req.body.weight_grams;
+    if (typeof weight !== "number" || weight <= 0) {
+      return res
+        .status(400)
+        .json(problem(400, "Invalid weight provided", req.originalUrl));
+    }
+
+    const updated = await updateOrderStatus(order.id, "weighed", weight);
+    return res.status(200).json(toOrderResponse(updated));
+  },
+);
+
+// POST	/v1/orders/{orderId}/wash
+
+// POST	/v1/orders/{orderId}/ready
+
+// POST	/v1/orders/{orderId}/delivery
+
+// POST	/v1/orders/{orderId}/complete
