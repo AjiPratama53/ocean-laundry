@@ -23,6 +23,9 @@
   },
   "homepage": "https://github.com/AjiPratama53/ocean-laundry#readme",
   "devDependencies": {
-    "@redocly/cli": "^2.49.0"
+    "@redocly/cli": "^2.49.0",
+    "@types/node": "^26.4.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
   }
 }
