@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { orderIdParamSchema, getOrdersQuerySchema } from "../schemas/orders.js";
-import { findOrderById, findOrders } from "../store/orders.js";
-import { toOrderResponse } from "../representations/orders.js";
-import { problem } from "../problem.js";
+import { orderIdParamSchema, getOrdersQuerySchema } from "../schemas/orders.ts";
+import { findOrderById, findOrders } from "../store/orders.ts";
+import { toOrderResponse } from "../representations/orders.ts";
+import { problem } from "../problem.ts";
 
 export const ordersRouter = Router();
 

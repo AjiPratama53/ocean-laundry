@@ -1,5 +1,5 @@
 import express from "express";
-import { ordersRouter } from "./routes/orders.js";
+import { ordersRouter } from "./routes/orders.ts";
 import { Pool } from "pg";
 
 export const pool = new Pool({

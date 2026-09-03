@@ -1,4 +1,4 @@
-import type { OrderRow } from "../store/orders.js";
+import type { OrderRow } from "../store/orders.ts";
 
 export interface OrderResponse {
   id: string;
