@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { orderIdParamSchema, getOrdersQuerySchema } from "../schemas/orders.ts";
-import { findOrderById, findOrders } from "../store/orders.ts";
+import { orderIdParamSchema, getOrdersQuerySchema, createOrderSchema } from "../schemas/orders.ts";
+import { createOrder, findOrderById, findOrders } from "../store/orders.ts";
 import { toOrderResponse } from "../representations/orders.ts";
 import { problem } from "../problem.ts";
 
@@ -43,4 +43,28 @@ ordersRouter.get("/orders", async (req, res) => {
 
   // 4. Representation + 5. Response
   return res.status(200).json(rows.map(toOrderResponse));
+});
+
+// POST /v1/orders
+ordersRouter.post("/orders", async (req, res) => {
+  // 2. Validation
+  const parsed = createOrderSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res
+      .status(400)
+      .json(problem(400, "Invalid request body", req.originalUrl));
+  }
+
+  try {
+    // 3. Work
+    const newOrder = await createOrder(parsed.data);
+
+    // 4. Representation + 5. Response
+    return res.status(201).json(toOrderResponse(newOrder));
+  } catch (error) {
+    console.error("Error creating order:", error);
+    return res
+      .status(500)
+      .json(problem(500, "Failed to create order", req.originalUrl));
+  }
 });
