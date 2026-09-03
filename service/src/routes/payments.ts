@@ -24,7 +24,7 @@ paymentsRouter.get("/payments/:paymentId", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "Invalid payment id", req.originalUrl));
+      .json(problem(400, "validation-error", "Invalid payment id", req.originalUrl));
   }
 
   // 3. Work
@@ -32,7 +32,7 @@ paymentsRouter.get("/payments/:paymentId", async (req, res) => {
   if (!row) {
     return res
       .status(404)
-      .json(problem(404, "Payment not found", req.originalUrl));
+      .json(problem(404, "not-found", "Payment not found", req.originalUrl));
   }
 
   // 4. Representation + 5. Response
@@ -47,7 +47,7 @@ paymentsRouter.post("/payments", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "Invalid request body", req.originalUrl));
+      .json(problem(422, "validation-error", "Invalid request body", req.originalUrl));
   }
 
   const idempotencyKey = req.header("Idempotency-Key");
@@ -56,13 +56,13 @@ paymentsRouter.post("/payments", async (req, res) => {
   if (!idempotencyKey || !isUuid(idempotencyKey)) {
     return res
       .status(400)
-      .json(problem(400, "Invalid or missing Idempotency-Key", req.originalUrl));
+      .json(problem(400, "validation-error", "Invalid or missing Idempotency-Key", req.originalUrl));
   }
 
   if (!(await orderExists(parsed.data.orderId))) {
     return res
       .status(422)
-      .json(problem(422, "orderId does not reference an existing order", req.originalUrl));
+      .json(problem(422, "validation-error", "orderId does not reference an existing order", req.originalUrl));
   }
 
   const bodyHash = hashBody(parsed.data);
@@ -76,6 +76,7 @@ paymentsRouter.post("/payments", async (req, res) => {
         .json(
           problem(
             409,
+            "idempotency-key-reuse",
             "Idempotency-Key was already used with a different request body",
             req.originalUrl,
           ),

@@ -33,7 +33,7 @@ ordersRouter.get("/orders/:orderId", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "Invalid order id", req.originalUrl));
+      .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
   }
 
   // 3. Work
@@ -41,7 +41,7 @@ ordersRouter.get("/orders/:orderId", async (req, res) => {
   if (!row) {
     return res
       .status(404)
-      .json(problem(404, "Order not found", req.originalUrl));
+      .json(problem(404, "not-found", "Order not found", req.originalUrl));
   }
 
   // 4. Representation + 5. Response
@@ -55,7 +55,7 @@ ordersRouter.get("/orders", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "Invalid query parameters", req.originalUrl));
+      .json(problem(400, "validation-error", "Invalid query parameters", req.originalUrl));
   }
 
   // 3. Work
@@ -72,7 +72,7 @@ ordersRouter.post("/orders", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "Invalid request body", req.originalUrl));
+      .json(problem(400, "validation-error", "Invalid request body", req.originalUrl));
   }
 
   const idempotencyKey = req.header("Idempotency-Key");
@@ -82,7 +82,7 @@ ordersRouter.post("/orders", async (req, res) => {
     return res
       .status(400)
       .json(
-        problem(400, "Invalid or missing Idempotency-Key", req.originalUrl),
+        problem(400, "validation-error", "Invalid or missing Idempotency-Key", req.originalUrl),
       );
   }
 
@@ -97,6 +97,7 @@ ordersRouter.post("/orders", async (req, res) => {
         .json(
           problem(
             409,
+            "idempotency-key-reuse",
             "Idempotency-Key was already used with a different request body",
             req.originalUrl,
           ),
@@ -115,7 +116,8 @@ ordersRouter.post("/orders", async (req, res) => {
       .status(422)
       .json(
         problem(
-          422,
+          422, 
+          "validation-error",
           "packageId does not reference an existing package",
           req.originalUrl,
         ),
@@ -144,7 +146,7 @@ ordersRouter.post("/orders", async (req, res) => {
     console.error("Error creating order:", error);
     return res
       .status(500)
-      .json(problem(500, "Failed to create order", req.originalUrl));
+      .json(problem(500, "internal-server-error", "Failed to create order", req.originalUrl));
   }
 });
 
@@ -156,14 +158,14 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "Invalid order id", req.originalUrl));
+        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
     }
 
     const order = await findOrderById(parsed.data.orderId);
     if (!order) {
       return res
         .status(404)
-        .json(problem(404, "Order not found", req.originalUrl));
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
     if (order.status !== "placed") {
@@ -172,6 +174,7 @@ ordersRouter.post(
         .json(
           problem(
             409,
+            "conflict",
             `Order status must be 'placed' to pick up, current status: ${order.status}`,
             req.originalUrl,
           ),
@@ -191,14 +194,14 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "Invalid order id", req.originalUrl));
+        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
     }
 
     const order = await findOrderById(parsed.data.orderId);
     if (!order) {
       return res
         .status(404)
-        .json(problem(404, "Order not found", req.originalUrl));
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
     if (order.status !== "picked_up") {
@@ -207,6 +210,7 @@ ordersRouter.post(
         .json(
           problem(
             409,
+            "conflict",
             `Order status must be 'picked_up' to weigh, current status: ${order.status}`,
             req.originalUrl,
           ),
@@ -218,7 +222,7 @@ ordersRouter.post(
       return res
         .status(500)
         .json(
-          problem(500, "Failed to retrieve package price", req.originalUrl),
+          problem(500, "internal-server-error", "Failed to retrieve package price", req.originalUrl),
         );
     }
 
@@ -226,8 +230,8 @@ ordersRouter.post(
     const weight = req.body.weightGrams;
     if (typeof weight !== "number" || weight <= 0) {
       return res
-        .status(400)
-        .json(problem(400, "Invalid weight provided", req.originalUrl));
+        .status(422)
+        .json(problem(422, "validation-error", "weightGrams must be greater than 0", req.originalUrl));
     }
 
     const totalAmount = price * weight;
@@ -247,14 +251,14 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "Invalid order id", req.originalUrl));
+        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
     }
 
     const order = await findOrderById(parsed.data.orderId);
     if (!order) {
       return res
         .status(404)
-        .json(problem(404, "Order not found", req.originalUrl));
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
     if (order.status !== "weighed") {
@@ -263,6 +267,7 @@ ordersRouter.post(
         .json(
           problem(
             409,
+            "conflict",
             `Order status must be 'weighed' to wash, current status: ${order.status}`,
             req.originalUrl,
           ),
@@ -282,14 +287,14 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "Invalid order id", req.originalUrl));
+        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
     }
 
     const order = await findOrderById(parsed.data.orderId);
     if (!order) {
       return res
         .status(404)
-        .json(problem(404, "Order not found", req.originalUrl));
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
     if (order.status !== "washing") {
@@ -298,6 +303,7 @@ ordersRouter.post(
         .json(
           problem(
             409,
+            "conflict",
             `Order status must be 'washing to be readied, current status: ${order.status}`,
             req.originalUrl,
           ),
@@ -318,14 +324,14 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "Invalid order id", req.originalUrl));
+        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
     }
 
     const order = await findOrderById(parsed.data.orderId);
     if (!order) {
       return res
         .status(404)
-        .json(problem(404, "Order not found", req.originalUrl));
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
     if (order.status !== "ready") {
@@ -334,6 +340,7 @@ ordersRouter.post(
         .json(
           problem(
             409,
+            "conflict",
             `Order status must be 'ready' to be delivered, current status: ${order.status}`,
             req.originalUrl,
           ),
@@ -354,14 +361,14 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "Invalid order id", req.originalUrl));
+        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
     }
 
     const order = await findOrderById(parsed.data.orderId);
     if (!order) {
       return res
         .status(404)
-        .json(problem(404, "Order not found", req.originalUrl));
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
     if (order.status !== "delivering") {
@@ -370,6 +377,7 @@ ordersRouter.post(
         .json(
           problem(
             409,
+            "conflict",
             `Order status must be 'delivered' to be completed, current status: ${order.status}`,
             req.originalUrl,
           ),

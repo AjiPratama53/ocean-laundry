@@ -1,16 +1,29 @@
-export function problem(status: number, detail: string, instance: string) {
-  const titles: Record<number, string> = {
-    400: "Request validation failed",
-    404: "Resource not found",
-    409: "Request conflicts with the current state",
-    422: "Request cannot be processed",
-    500: "Internal server error",
-  };
+export type ProblemType =
+  | "validation-error"
+  | "not-found"
+  | "conflict"
+  | "idempotency-key-reuse"
+  | "internal-server-error";
+
+const titles: Record<ProblemType, string> = {
+  "validation-error": "Request validation failed",
+  "not-found": "Resource not found",
+  "conflict": "Order state conflict",
+  "idempotency-key-reuse": "Idempotency-Key was reused with a different body",
+  "internal-server-error": "Internal server error",
+};
+
+export function problem(
+  status: number,
+  type: ProblemType,
+  detail: string,
+  instance: string,
+  extensions?: Record<string, unknown>,
+) {
   return {
-    type: `https://oceanlaundry.api/problems/${titles[status]
-      .toLowerCase()
-      .replace(/\s+/g, "-")}`,
-    title: titles[status] ?? "Error",
+    ...extensions,
+    type: `https://oceanlaundry.api/problems/${type}`,
+    title: titles[type],
     status,
     detail,
     instance,
