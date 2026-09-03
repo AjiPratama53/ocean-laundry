@@ -35,3 +35,57 @@ export async function findPackages(params: {
   );
   return rows;
 }
+
+export async function createPackage(data: {
+  id: string;
+  name: string;
+  price: number;
+}): Promise<PackageRow> {
+  const { rows } = await pool.query<PackageRow>(
+    `
+      INSERT INTO packages (id, name, price)
+      VALUES ($1, $2, $3)
+      RETURNING *
+    `,
+    [data.id, data.name, data.price],
+  );
+
+  return rows[0];
+}
+
+export async function updatePackage(
+  id: string,
+  data: {
+    name?: string;
+    price?: number;
+  },
+): Promise<PackageRow | null> {
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+
+  if (data.name !== undefined) {
+    values.push(data.name);
+    setClauses.push(`name = $${values.length}`);
+  }
+  if (data.price !== undefined) {
+    values.push(data.price);
+    setClauses.push(`price = $${values.length}`);
+  }
+
+  if (setClauses.length === 0) {
+    return findPackageById(id); // No changes, return existing package
+  }
+
+  values.push(id);
+  const { rows } = await pool.query<PackageRow>(
+    `
+      UPDATE packages
+      SET ${setClauses.join(", ")}
+      WHERE id = $${values.length}
+      RETURNING *
+    `,
+    values,
+  );
+
+  return rows[0] ?? null;
+}
