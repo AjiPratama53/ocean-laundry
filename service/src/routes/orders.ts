@@ -292,13 +292,13 @@ ordersRouter.post(
         .json(problem(404, "Order not found", req.originalUrl));
     }
 
-    if (order.status !== "washed") {
+    if (order.status !== "washing") {
       return res
         .status(409)
         .json(
           problem(
             409,
-            `Order status must be 'washed' to be readied, current status: ${order.status}`,
+            `Order status must be 'washing to be readied, current status: ${order.status}`,
             req.originalUrl,
           ),
         );
