@@ -2,7 +2,12 @@ import { Router } from "express";
 
 import type { Request, Response } from "express";
 import { toPackageResponse } from "../representations/packages";
-import { findPackageById, findPackages } from "../store/packages";
+import {
+  findPackageById,
+  findPackages,
+  createPackage,
+  updatePackage,
+} from "../store/packages";
 import { packageIdParamSchema } from "../schemas/packages";
 import { problem } from "../problem";
 
@@ -34,7 +39,7 @@ packagesRouter.get(
 );
 
 // GET /v1/packages
-packagesRouter.get("/packages", async (req: Request, res: Response) => {
+packagesRouter.get("/packages", async (_req: Request, res: Response) => {
   // 2. Work
   const rows = await findPackages({
     limit: 20, // default limit
@@ -45,5 +50,63 @@ packagesRouter.get("/packages", async (req: Request, res: Response) => {
 });
 
 // POST /v1/packages
+packagesRouter.post("/packages", async (req: Request, res: Response) => {
+  // 2. Validation
+  const { id, name, price } = req.body;
+  if (!id || !name || price === undefined) {
+    return res
+      .status(400)
+      .json(problem(400, "Missing required fields", req.originalUrl));
+  }
+
+  // 3. Work
+  try {
+    const row = await createPackage({ id, name, price });
+    // 4. Representation + 5. Response
+    return res.status(201).json(toPackageResponse(row));
+  } catch (error) {
+    console.error("Error creating package:", error);
+    return res
+      .status(500)
+      .json(problem(500, "Internal server error", req.originalUrl));
+  }
+});
 
 // PATCH /v1/packages/{packageId}
+packagesRouter.patch(
+  "/packages/:packageId",
+  async (req: Request, res: Response) => {
+    // 2. Validation
+    const parsed = packageIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(problem(400, "Invalid package id", req.originalUrl));
+    }
+
+    const { name, price } = req.body;
+    if (name === undefined && price === undefined) {
+      return res
+        .status(400)
+        .json(problem(400, "No fields to update", req.originalUrl));
+    }
+
+    // 3. Work
+    try {
+      const row = await updatePackage(parsed.data.packageId, { name, price });
+      if (!row) {
+        return res
+          .status(404)
+          .json(problem(404, "Package not found", req.originalUrl));
+      }
+
+      // 4. Representation + 5. Response
+      return res.status(200).json(toPackageResponse(row));
+    } catch (error) {
+      console.error("Error updating package:", error);
+      return res
+        .status(500)
+        .json(problem(500, "Internal server error", req.originalUrl));
+    }
+  },
+);
