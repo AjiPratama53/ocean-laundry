@@ -1,18 +1,23 @@
 import { Router } from "express";
 import { createHash } from "crypto";
 import { orderIdParamSchema, getOrdersQuerySchema, createOrderSchema } from "../schemas/orders.ts";
-import { createOrder, findOrderById, findOrders } from "../store/orders.ts";
+import { createOrder, findOrderById, findOrders, packageExists } from "../store/orders.ts";
 import { toOrderResponse } from "../representations/orders.ts";
 import { problem } from "../problem.ts";
 import { findKey, saveKey } from "../store/idempotency.ts";
+import { z } from "zod";
+
 
 export const ordersRouter = Router();
 
+
 function hashBody(body: unknown): string {
   return createHash("sha256")
-    .update(JSON.stringify(body))
-    .digest("hex");
+  .update(JSON.stringify(body))
+  .digest("hex");
 }
+
+const isUuid = (s: string) => z.string().uuid().safeParse(s).success;
 
 // GET /v1/orders/{orderId}
 ordersRouter.get("/orders/:orderId", async (req, res) => {
@@ -66,7 +71,7 @@ ordersRouter.post("/orders", async (req, res) => {
   const idempotencyKey = req.header("Idempotency-Key");
   
   // Idempotency-Key missing / malformed 
-  if (!idempotencyKey || idempotencyKey.trim().length === 0) {
+  if (!idempotencyKey || !isUuid(idempotencyKey)) {
     return res
       .status(400)
       .json(problem(400, "Invalid or missing Idempotency-Key", req.originalUrl));
@@ -95,6 +100,12 @@ ordersRouter.post("/orders", async (req, res) => {
       .status(existingKey.responseStatus)
       .json(existingKey.responseBody);
   }
+  
+  if (!(await packageExists(parsed.data.packageId))) {
+    return res
+      .status(422)
+      .json(problem(422, "packageId does not reference an existing package", req.originalUrl));
+  }
 
   try {
     // 3. Work
@@ -109,6 +120,8 @@ ordersRouter.post("/orders", async (req, res) => {
       responseStatus: 201,
       responseBody,
     });
+
+    res.setHeader("Location", `/v1/orders/${newOrder.id}`);
 
     // 5. Response
     return res.status(201).json(responseBody);
