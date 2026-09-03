@@ -2,7 +2,7 @@ CREATE TABLE packages (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   price INTEGER NOT NULL CHECK (price >= 0),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  -- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE orders (
