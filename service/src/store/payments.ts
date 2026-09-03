@@ -38,3 +38,8 @@ export async function createPayment(data: {
 
   return rows[0];
 }
+
+export async function orderExists(orderId: string): Promise<boolean> {
+  const { rows } = await pool.query(`SELECT 1 FROM orders WHERE id = $1`, [orderId]);
+  return rows.length > 0;
+}

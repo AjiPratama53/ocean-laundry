@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { createHash, randomUUID } from "crypto";
 import { paymentIdParamSchema, createPaymentSchema } from "../schemas/payments.ts";
-import { findPaymentById, createPayment } from "../store/payments.ts";
+import { findPaymentById, createPayment, orderExists } from "../store/payments.ts";
 import { toPaymentResponse } from "../representations/payments.ts";
 import { findKey, saveKey } from "../store/idempotency.ts";
 import { problem } from "../problem.ts";
+import { z } from "zod";
 
 export const paymentsRouter = Router();
 
@@ -13,6 +14,8 @@ function hashBody(body: unknown): string {
     .update(JSON.stringify(body))
     .digest("hex");
 }
+
+const isUuid = (s: string) => z.string().uuid().safeParse(s).success;
 
 // GET /v1/payments/{paymentId}
 paymentsRouter.get("/payments/:paymentId", async (req, res) => {
@@ -43,17 +46,23 @@ paymentsRouter.post("/payments", async (req, res) => {
   const parsed = createPaymentSchema.safeParse(req.body);
   if (!parsed.success) {
     return res
-      .status(422)
-      .json(problem(422, "Invalid payment request", req.originalUrl));
+      .status(400)
+      .json(problem(400, "Invalid request body", req.originalUrl));
   }
 
   const idempotencyKey = req.header("Idempotency-Key");
 
   // Idempotency-Key missing / malformed 
-  if (!idempotencyKey || idempotencyKey.trim().length === 0) {
+  if (!idempotencyKey || !isUuid(idempotencyKey)) {
     return res
       .status(400)
       .json(problem(400, "Invalid or missing Idempotency-Key", req.originalUrl));
+  }
+
+  if (!(await orderExists(parsed.data.orderId))) {
+    return res
+      .status(422)
+      .json(problem(422, "orderId does not reference an existing order", req.originalUrl));
   }
 
   const bodyHash = hashBody(parsed.data);
