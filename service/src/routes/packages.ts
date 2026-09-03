@@ -84,8 +84,8 @@ packagesRouter.patch(
         .json(problem(400, "Invalid package id", req.originalUrl));
     }
 
-    const { name, price } = req.body;
-    if (name === undefined && price === undefined) {
+    const { packageName, packagePrice } = req.body;
+    if (packageName === undefined && packagePrice === undefined) {
       return res
         .status(400)
         .json(problem(400, "No fields to update", req.originalUrl));
@@ -93,7 +93,10 @@ packagesRouter.patch(
 
     // 3. Work
     try {
-      const row = await updatePackage(parsed.data.packageId, { name, price });
+      const row = await updatePackage(parsed.data.packageId, {
+        name: packageName,
+        price: packagePrice,
+      });
       if (!row) {
         return res
           .status(404)

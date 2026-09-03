@@ -48,7 +48,7 @@ export async function createPackage(
       VALUES ($1, $2, $3)
       RETURNING *
     `,
-    [id, input.name, input.price],
+    [id, input.packageName, input.packagePrice],
   );
 
   return rows[0];

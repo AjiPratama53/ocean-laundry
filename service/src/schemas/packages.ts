@@ -10,8 +10,8 @@ export const getPackagesQuerySchema = z.object({
 });
 
 export const createPackageSchema = z.object({
-  name: z.string().min(1, "name required"),
-  price: z.number().min(0, "price must be non-negative"),
+  packageName: z.string().min(1, "name required"),
+  packagePrice: z.number().min(0, "price must be non-negative"),
 });
 
 export type CreatePackageInput = z.infer<typeof createPackageSchema>;
