@@ -16,6 +16,7 @@ import { toOrderResponse } from "../representations/orders.ts";
 import { problem } from "../problem.ts";
 import { findKey, saveKey } from "../store/idempotency.ts";
 import { z } from "zod";
+import { findPackageById } from "../store/packages.ts";
 
 export const ordersRouter = Router();
 
@@ -212,15 +213,28 @@ ordersRouter.post(
         );
     }
 
-    // For simplicity, let's assume the weight is provided in the request body as `weight_grams`.
-    const weight = req.body.weight_grams;
+    const packageRow = await findPackageById(order.package_id);
+    if (!packageRow || packageRow.price === null) {
+      return res
+        .status(500)
+        .json(
+          problem(500, "Failed to retrieve package price", req.originalUrl),
+        );
+    }
+
+    const { price } = packageRow;
+    const weight = req.body.weightGrams;
     if (typeof weight !== "number" || weight <= 0) {
       return res
         .status(400)
         .json(problem(400, "Invalid weight provided", req.originalUrl));
     }
 
-    const updated = await updateOrderStatus(order.id, "weighed", weight);
+    const totalAmount = price * weight;
+    const updated = await updateOrderStatus(order.id, "weighed", {
+      weighGrams: weight,
+      totalAmount: totalAmount,
+    });
     return res.status(200).json(toOrderResponse(updated));
   },
 );
