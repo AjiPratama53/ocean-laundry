@@ -1,4 +1,6 @@
+import { randomUUID } from "crypto";
 import { pool } from "../app.ts";
+import { CreatePackageInput } from "../schemas/packages.ts";
 
 export interface PackageRow {
   id: string;
@@ -36,18 +38,17 @@ export async function findPackages(params: {
   return rows;
 }
 
-export async function createPackage(data: {
-  id: string;
-  name: string;
-  price: number;
-}): Promise<PackageRow> {
+export async function createPackage(
+  input: CreatePackageInput,
+): Promise<PackageRow> {
+  const id = `pkg_${randomUUID()}`;
   const { rows } = await pool.query<PackageRow>(
     `
       INSERT INTO packages (id, name, price)
       VALUES ($1, $2, $3)
       RETURNING *
     `,
-    [data.id, data.name, data.price],
+    [id, input.name, input.price],
   );
 
   return rows[0];

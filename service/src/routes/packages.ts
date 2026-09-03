@@ -8,7 +8,7 @@ import {
   createPackage,
   updatePackage,
 } from "../store/packages";
-import { packageIdParamSchema } from "../schemas/packages";
+import { createPackageSchema, packageIdParamSchema } from "../schemas/packages";
 import { problem } from "../problem";
 
 export const packagesRouter = Router();
@@ -52,16 +52,16 @@ packagesRouter.get("/packages", async (_req: Request, res: Response) => {
 // POST /v1/packages
 packagesRouter.post("/packages", async (req: Request, res: Response) => {
   // 2. Validation
-  const { id, name, price } = req.body;
-  if (!id || !name || price === undefined) {
+  const parsed = createPackageSchema.safeParse(req.body);
+  if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "Missing required fields", req.originalUrl));
+      .json(problem(400, "Invalid package data", req.originalUrl));
   }
 
   // 3. Work
   try {
-    const row = await createPackage({ id, name, price });
+    const row = await createPackage(parsed.data);
     // 4. Representation + 5. Response
     return res.status(201).json(toPackageResponse(row));
   } catch (error) {
