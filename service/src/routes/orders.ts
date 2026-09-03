@@ -16,6 +16,7 @@ import { toOrderResponse } from "../representations/orders.ts";
 import { problem } from "../problem.ts";
 import { findKey, saveKey } from "../store/idempotency.ts";
 import { z } from "zod";
+import { findPackageById } from "../store/packages.ts";
 
 export const ordersRouter = Router();
 
@@ -212,20 +213,66 @@ ordersRouter.post(
         );
     }
 
-    // For simplicity, let's assume the weight is provided in the request body as `weight_grams`.
-    const weight = req.body.weight_grams;
+    const packageRow = await findPackageById(order.package_id);
+    if (!packageRow || packageRow.price === null) {
+      return res
+        .status(500)
+        .json(
+          problem(500, "Failed to retrieve package price", req.originalUrl),
+        );
+    }
+
+    const { price } = packageRow;
+    const weight = req.body.weightGrams;
     if (typeof weight !== "number" || weight <= 0) {
       return res
         .status(400)
         .json(problem(400, "Invalid weight provided", req.originalUrl));
     }
 
-    const updated = await updateOrderStatus(order.id, "weighed", weight);
+    const totalAmount = price * weight;
+    const updated = await updateOrderStatus(order.id, "weighed", {
+      weighGrams: weight,
+      totalAmount: totalAmount,
+    });
     return res.status(200).json(toOrderResponse(updated));
   },
 );
 
 // POST	/v1/orders/{orderId}/wash
+ordersRouter.post(
+  "/orders/:orderId/wash",
+  async (req: Request, res: Response) => {
+    const parsed = orderIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(problem(400, "Invalid order id", req.originalUrl));
+    }
+
+    const order = await findOrderById(parsed.data.orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json(problem(404, "Order not found", req.originalUrl));
+    }
+
+    if (order.status !== "weighed") {
+      return res
+        .status(409)
+        .json(
+          problem(
+            409,
+            `Order status must be 'weighed' to wash, current status: ${order.status}`,
+            req.originalUrl,
+          ),
+        );
+    }
+
+    const updated = await updateOrderStatus(order.id, "washing");
+    return res.status(200).json(toOrderResponse(updated));
+  },
+);
 
 // POST	/v1/orders/{orderId}/ready
 ordersRouter.post(
