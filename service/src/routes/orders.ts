@@ -33,7 +33,9 @@ ordersRouter.get("/orders/:orderId", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+      .json(
+        problem(400, "validation-error", "Invalid order id", req.originalUrl),
+      );
   }
 
   // 3. Work
@@ -55,7 +57,14 @@ ordersRouter.get("/orders", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "validation-error", "Invalid query parameters", req.originalUrl));
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "Invalid query parameters",
+          req.originalUrl,
+        ),
+      );
   }
 
   // 3. Work
@@ -72,7 +81,14 @@ ordersRouter.post("/orders", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "validation-error", "Invalid request body", req.originalUrl));
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "Invalid request body",
+          req.originalUrl,
+        ),
+      );
   }
 
   const idempotencyKey = req.header("Idempotency-Key");
@@ -82,7 +98,12 @@ ordersRouter.post("/orders", async (req, res) => {
     return res
       .status(400)
       .json(
-        problem(400, "validation-error", "Invalid or missing Idempotency-Key", req.originalUrl),
+        problem(
+          400,
+          "validation-error",
+          "Invalid or missing Idempotency-Key",
+          req.originalUrl,
+        ),
       );
   }
 
@@ -116,7 +137,7 @@ ordersRouter.post("/orders", async (req, res) => {
       .status(422)
       .json(
         problem(
-          422, 
+          422,
           "validation-error",
           "packageId does not reference an existing package",
           req.originalUrl,
@@ -146,7 +167,14 @@ ordersRouter.post("/orders", async (req, res) => {
     console.error("Error creating order:", error);
     return res
       .status(500)
-      .json(problem(500, "internal-server-error", "Failed to create order", req.originalUrl));
+      .json(
+        problem(
+          500,
+          "internal-server-error",
+          "Failed to create order",
+          req.originalUrl,
+        ),
+      );
   }
 });
 
@@ -158,7 +186,9 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
     }
 
     const order = await findOrderById(parsed.data.orderId);
@@ -194,7 +224,9 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
     }
 
     const order = await findOrderById(parsed.data.orderId);
@@ -222,7 +254,12 @@ ordersRouter.post(
       return res
         .status(500)
         .json(
-          problem(500, "internal-server-error", "Failed to retrieve package price", req.originalUrl),
+          problem(
+            500,
+            "internal-server-error",
+            "Failed to retrieve package price",
+            req.originalUrl,
+          ),
         );
     }
 
@@ -231,10 +268,17 @@ ordersRouter.post(
     if (typeof weight !== "number" || weight <= 0) {
       return res
         .status(422)
-        .json(problem(422, "validation-error", "weightGrams must be greater than 0", req.originalUrl));
+        .json(
+          problem(
+            422,
+            "validation-error",
+            "weightGrams must be greater than 0",
+            req.originalUrl,
+          ),
+        );
     }
 
-    const totalAmount = price * weight;
+    const totalAmount = (price * weight) / 1000; // Convert grams to kilograms
     const updated = await updateOrderStatus(order.id, "awaiting_payment", {
       weighGrams: weight,
       totalAmount: totalAmount,
@@ -251,7 +295,9 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
     }
 
     const order = await findOrderById(parsed.data.orderId);
@@ -287,7 +333,9 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
     }
 
     const order = await findOrderById(parsed.data.orderId);
@@ -310,7 +358,6 @@ ordersRouter.post(
         );
     }
 
-
     const updated = await updateOrderStatus(order.id, "ready");
     return res.status(200).json(toOrderResponse(updated));
   },
@@ -324,7 +371,9 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
     }
 
     const order = await findOrderById(parsed.data.orderId);
@@ -347,7 +396,6 @@ ordersRouter.post(
         );
     }
 
-
     const updated = await updateOrderStatus(order.id, "delivering");
     return res.status(200).json(toOrderResponse(updated));
   },
@@ -361,7 +409,9 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
     }
 
     const order = await findOrderById(parsed.data.orderId);
@@ -383,7 +433,6 @@ ordersRouter.post(
           ),
         );
     }
-
 
     const updated = await updateOrderStatus(order.id, "completed");
     return res.status(200).json(toOrderResponse(updated));

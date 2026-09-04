@@ -1,22 +1,22 @@
 import { z } from "zod";
 
+const orderStatusEnum = z.enum([
+  "placed",
+  "picked_up",
+  "awaiting_payment",
+  "paid",
+  "washing",
+  "ready",
+  "delivering",
+  "completed",
+]);
+
 export const orderIdParamSchema = z.object({
   orderId: z.string().min(1),
 });
 
 export const getOrdersQuerySchema = z.object({
-  status: z
-    .enum([
-      "placed",
-      "picked_up",
-      "awaiting_payment",
-      "paid",
-      "washing",
-      "ready",
-      "delivering",
-      "completed",
-    ])
-    .optional(),
+  status: orderStatusEnum.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   cursor: z.string().optional(),
 });
@@ -33,16 +33,7 @@ export const weightOrderSchema = z.object({
 });
 
 export const updateOrderStatusSchema = z.object({
-  status: z.enum([
-    "placed",
-    "picked_up",
-    "awaiting_payment",
-    "paid",
-    "washing",
-    "ready",
-    "delivering",
-    "completed",
-  ]),
+  status: orderStatusEnum,
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

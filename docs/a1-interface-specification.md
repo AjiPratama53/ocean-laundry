@@ -219,13 +219,18 @@ Karena `openapi.yaml` menggunakan `/v1` pada `servers.url`, path saat pengujian 
 ### 5.2 Contoh curl 1 — GET Orders dengan filter dan pagination
 
 ```powershell
-curl.exe -i "http://127.0.0.1:4010/orders?status=placed&limit=20" -H "Authorization: Bearer <JWT>"
+curl -i "http://127.0.0.1:4010/orders?status=placed&limit=20" \
+ -H "Authorization: Bearer <JWT>"
 ```
 
 ### 5.3 Contoh curl 2 — POST Payment dengan Idempotency-Key
 
 ```powershell
-curl.exe -i -X POST http://127.0.0.1:4010/payments -H "Authorization: Bearer <JWT>" -H "Idempotency-Key: 0f7c1b9e-3d21-4a6f-9c05-8e2b7d41a9f0" -H "Content-Type: application/json" -d '{"orderId":"ord_001","amount":28000}'
+curl -i -X POST http://127.0.0.1:4010/payments \
+  -H "Authorization: Bearer <JWT>" \
+  -H "Idempotency-Key: 0f7c1b9e-3d21-4a6f-9c05-8e2b7d41a9f0" \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"ord_001","amount":28000}'
 ```
 
 Request body:
@@ -240,7 +245,10 @@ Request body:
 ### 5.4 Contoh curl 3 — POST Payment tanpa Idempotency-Key
 
 ```powershell
-curl.exe -i -X POST http://127.0.0.1:4010/payments -H "Authorization: Bearer <JWT>" -H "Content-Type: application/json" -d '{"orderId":"ord_001","amount":28000}'
+curl -i -X POST http://127.0.0.1:4010/payments \
+  -H "Authorization: Bearer <JWT>" \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"ord_001","amount":28000}'
 ```
 
 Request ini sengaja tidak menyertakan `Idempotency-Key`. Prism diharapkan menolak request karena header tersebut dideklarasikan sebagai required header pada operasi `POST /payments`.
@@ -254,7 +262,11 @@ Request ini sengaja tidak menyertakan `Idempotency-Key`. Prism diharapkan menola
 Command yang digunakan:
 
 ```powershell
-curl.exe -i -X POST http://127.0.0.1:4010/payments -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." -H "Idempotency-Key: 0f7c1b9e-3d21-4a6f-9c05-8e2b7d41a9f0" -H "Content-Type: application/json" -d '{"orderId":"ord_001","amount":28000}'
+curl -i -X POST http://127.0.0.1:4010/payments \
+  -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." \
+  -H "Idempotency-Key: 0f7c1b9e-3d21-4a6f-9c05-8e2b7d41a9f0" \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"ord_001","amount":28000}'
 ```
 
 **Bukti:**
@@ -266,7 +278,10 @@ curl.exe -i -X POST http://127.0.0.1:4010/payments -H "Authorization: Bearer eyJ
 Command yang digunakan:
 
 ```powershell
-curl.exe -i -X POST http://127.0.0.1:4010/payments -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." -H "Content-Type: application/json" -d '{"orderId":"ord_001","amount":28000}'
+curl -i -X POST http://127.0.0.1:4010/payments \
+  -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"ord_001","amount":28000}'
 ```
 
 **Bukti:**
