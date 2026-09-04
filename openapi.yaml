@@ -197,7 +197,7 @@ paths:
       operationId: weighOrder
       parameters:
         - $ref: "#/components/parameters/OrderId"
-      description: Staff menimbang laundry dan menetapkan harga.
+      description: Staff menimbang laundry dan menetapkan harga. Transitions the order from picked_up to awaiting_payment.
       requestBody:
         required: true
         content:
@@ -231,7 +231,7 @@ paths:
       operationId: startWashing
       parameters:
         - $ref: "#/components/parameters/OrderId"
-      description: Staff mulai mencuci laundry.
+      description: Staff mulai mencuci laundry. 
       responses:
         "200":
           description: Washing started
@@ -305,6 +305,9 @@ paths:
     post:
       summary: Make a payment
       operationId: createPayment
+      description: Records a payment for an order. Transitions the order from
+        awaiting_payment to paid. Returns 409 if the order is not in
+        awaiting_payment status.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:

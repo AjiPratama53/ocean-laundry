@@ -235,7 +235,7 @@ ordersRouter.post(
     }
 
     const totalAmount = price * weight;
-    const updated = await updateOrderStatus(order.id, "weighed", {
+    const updated = await updateOrderStatus(order.id, "awaiting_payment", {
       weighGrams: weight,
       totalAmount: totalAmount,
     });
@@ -261,14 +261,14 @@ ordersRouter.post(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
-    if (order.status !== "weighed") {
+    if (order.status !== "awaiting_payment") {
       return res
         .status(409)
         .json(
           problem(
             409,
             "conflict",
-            `Order status must be 'weighed' to wash, current status: ${order.status}`,
+            `Order status must be 'awaiting_payment' to wash, current status: ${order.status}`,
             req.originalUrl,
           ),
         );

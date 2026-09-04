@@ -9,7 +9,6 @@ export const getOrdersQuerySchema = z.object({
     .enum([
       "placed",
       "picked_up",
-      "weighed",
       "awaiting_payment",
       "paid",
       "washing",
@@ -37,7 +36,6 @@ export const updateOrderStatusSchema = z.object({
   status: z.enum([
     "placed",
     "picked_up",
-    "weighed",
     "awaiting_payment",
     "paid",
     "washing",
