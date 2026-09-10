@@ -404,7 +404,7 @@ components:
   schemas:
     Package:
       type: object
-      required: [id, name, price]
+      required: [id, name, description, price]
       properties:
         id:
           type: string
@@ -422,7 +422,7 @@ components:
 
     CreateNewPackage:
       type: object
-      required: [packageName, packagePrice]
+      required: [packageName, packageDesc, packagePrice]
       properties:
         packageName:
           type: string
