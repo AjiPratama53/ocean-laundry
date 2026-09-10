@@ -96,6 +96,21 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    delete:
+      summary: Delete a package
+      operationId: deletePackage
+      parameters:
+        - $ref: "#/components/parameters/PackageId"
+      responses:
+        "200":
+          description: Deleted package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /orders:
     get:
       summary: Get orders
@@ -397,6 +412,9 @@ components:
         name:
           type: string
           example: Regular Wash
+        description:
+          type: string
+          example: Cuci lipat 2 hari
         price:
           type: integer
           example: 8000
@@ -409,6 +427,9 @@ components:
         packageName:
           type: string
           example: Regular Wash
+        packageDesc:
+          type: string
+          example: Cuci lipat 2 hari
         packagePrice:
           type: integer
           example: 5000
@@ -420,6 +441,9 @@ components:
         packageName:
           type: string
           example: Express Wash
+        packageDesc:
+          type: string
+          example: Cuci lipat 1 hari
         packagePrice:
           type: integer
           example: 7000
@@ -463,7 +487,8 @@ components:
           type: string
           example: Jl. Kaliurang No. 10
         status:
-          $ref: "#/components/schemas/OrderStatus"
+          allOf:
+            - $ref: "#/components/schemas/OrderStatus"
           example: placed
         weightGrams:
           type: [integer, "null"]
