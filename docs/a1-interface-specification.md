@@ -263,8 +263,8 @@ Command yang digunakan:
 
 ```powershell
 curl -i -X POST http://127.0.0.1:4010/payments \
-  -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." \
-  -H "Idempotency-Key: 0f7c1b9e-3d21-4a6f-9c05-8e2b7d41a9f0" \
+  -H "Authorization: Bearer <JWT>" \
+  -H "Idempotency-Key: <KEY>" \
   -H "Content-Type: application/json" \
   -d '{"orderId":"ord_001","amount":28000}'
 ```
@@ -279,7 +279,7 @@ Command yang digunakan:
 
 ```powershell
 curl -i -X POST http://127.0.0.1:4010/payments \
-  -H "Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0." \
+  -H "Authorization: Bearer <JWT>" \
   -H "Content-Type: application/json" \
   -d '{"orderId":"ord_001","amount":28000}'
 ```
@@ -294,23 +294,24 @@ Pengujian ini menunjukkan bahwa requirement idempotency ditegakkan pada level ko
 
 ## 7. Endpoint Utama
 
-| Method  | Endpoint                        | Keterangan                                           |
-| ------- | ------------------------------- | ---------------------------------------------------- |
-| `GET`   | `/v1/packages`                  | Mengambil daftar package.                            |
-| `POST`  | `/v1/packages`                  | Membuat package.                                     |
-| `GET`   | `/v1/packages/{packageId}`      | Mengambil detail package.                            |
-| `PATCH` | `/v1/packages/{packageId}`      | Memperbarui package.                                 |
-| `GET`   | `/v1/orders`                    | Mengambil daftar order dengan filter dan pagination. |
-| `POST`  | `/v1/orders`                    | Membuat order dengan idempotency key.                |
-| `GET`   | `/v1/orders/{orderId}`          | Mengambil detail order.                              |
-| `POST`  | `/v1/orders/{orderId}/pickup`   | Menandai order telah di-pickup.                      |
-| `POST`  | `/v1/orders/{orderId}/weigh`    | Menimbang order dan menetapkan harga.                |
-| `POST`  | `/v1/orders/{orderId}/wash`     | Memulai proses pencucian.                            |
-| `POST`  | `/v1/orders/{orderId}/ready`    | Menandai order siap.                                 |
-| `POST`  | `/v1/orders/{orderId}/delivery` | Memulai delivery.                                    |
-| `POST`  | `/v1/orders/{orderId}/complete` | Menyelesaikan order.                                 |
-| `POST`  | `/v1/payments`                  | Membuat payment dengan idempotency key.              |
-| `GET`   | `/v1/payments/{paymentId}`      | Mengambil detail payment.                            |
+| Method   | Endpoint                        | Keterangan                                           |
+| -------- | ------------------------------- | ---------------------------------------------------- |
+| `POST`   | `/v1/packages`                  | Membuat package.                                     |
+| `GET`    | `/v1/packages`                  | Mengambil daftar package.                            |
+| `GET`    | `/v1/packages/{packageId}`      | Mengambil detail package.                            |
+| `PATCH`  | `/v1/packages/{packageId}`      | Memperbarui package.                                 |
+| `DELETE` | `/v1/packages/{packageId}`      | Menghapus package.                                   |
+| `GET`    | `/v1/orders`                    | Mengambil daftar order dengan filter dan pagination. |
+| `POST`   | `/v1/orders`                    | Membuat order dengan idempotency key.                |
+| `GET`    | `/v1/orders/{orderId}`          | Mengambil detail order.                              |
+| `POST`   | `/v1/orders/{orderId}/pickup`   | Menandai order telah di-pickup.                      |
+| `POST`   | `/v1/orders/{orderId}/weigh`    | Menimbang order dan menetapkan harga.                |
+| `POST`   | `/v1/orders/{orderId}/wash`     | Memulai proses pencucian.                            |
+| `POST`   | `/v1/orders/{orderId}/ready`    | Menandai order siap.                                 |
+| `POST`   | `/v1/orders/{orderId}/delivery` | Memulai delivery.                                    |
+| `POST`   | `/v1/orders/{orderId}/complete` | Menyelesaikan order.                                 |
+| `POST`   | `/v1/payments`                  | Membuat payment dengan idempotency key.              |
+| `GET`    | `/v1/payments/{paymentId}`      | Mengambil detail payment.                            |
 
 ---
 

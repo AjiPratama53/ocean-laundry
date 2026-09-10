@@ -11,6 +11,7 @@ export const getPackagesQuerySchema = z.object({
 
 export const createPackageSchema = z.object({
   packageName: z.string().min(1, "name required"),
+  packageDesc: z.string().min(1, "description required"),
   packagePrice: z.number().min(0, "price must be non-negative"),
 });
 

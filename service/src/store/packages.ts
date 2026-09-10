@@ -5,6 +5,7 @@ import { CreatePackageInput } from "../schemas/packages.js";
 export interface PackageRow {
   id: string;
   name: string;
+  description: string;
   price: number;
 }
 
@@ -32,7 +33,13 @@ export async function findPackages(params: {
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const { rows } = await pool.query<PackageRow>(
-    `SELECT * FROM packages ${where} ORDER BY id ASC LIMIT $${values.length}`,
+    `
+      SELECT * 
+      FROM packages 
+      ${where} 
+      ORDER BY id ASC 
+      LIMIT $${values.length}
+    `,
     values,
   );
   return rows;
@@ -44,11 +51,12 @@ export async function createPackage(
   const id = `pkg_${randomUUID()}`;
   const { rows } = await pool.query<PackageRow>(
     `
-      INSERT INTO packages (id, name, price)
-      VALUES ($1, $2, $3)
+      INSERT INTO packages 
+      (id, name, description, price)
+      VALUES ($1, $2, $3, $4)
       RETURNING *
     `,
-    [id, input.packageName, input.packagePrice],
+    [id, input.packageName, input.packageDesc, input.packagePrice],
   );
 
   return rows[0];
@@ -58,6 +66,7 @@ export async function updatePackage(
   id: string,
   data: {
     name?: string;
+    description?: string;
     price?: number;
   },
 ): Promise<PackageRow | null> {
@@ -67,6 +76,10 @@ export async function updatePackage(
   if (data.name !== undefined) {
     values.push(data.name);
     setClauses.push(`name = $${values.length}`);
+  }
+  if (data.description !== undefined) {
+    values.push(data.description);
+    setClauses.push(`description = $${values.length}`);
   }
   if (data.price !== undefined) {
     values.push(data.price);
@@ -93,7 +106,11 @@ export async function updatePackage(
 
 export async function deletePackage(id: string): Promise<PackageRow | null> {
   const { rows } = await pool.query<PackageRow>(
-    `DELETE FROM packages WHERE id = $1 RETURNING *`,
+    `
+      DELETE FROM packages 
+      WHERE id = $1 
+      RETURNING *
+    `,
     [id],
   );
   return rows[0] ?? null;

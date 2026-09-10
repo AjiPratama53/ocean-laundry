@@ -163,7 +163,7 @@ packagesRouter.patch(
 );
 
 // DELETE /v1/packages/{packageId}
-packagesRouter.get(
+packagesRouter.delete(
   "/packages/:packageId",
   async (req: Request, res: Response) => {
     // 2. Validation
