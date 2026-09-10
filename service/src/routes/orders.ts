@@ -4,19 +4,19 @@ import {
   orderIdParamSchema,
   getOrdersQuerySchema,
   createOrderSchema,
-} from "../schemas/orders.ts";
+} from "../schemas/orders.js";
 import {
   createOrder,
   findOrderById,
   findOrders,
   packageExists,
   updateOrderStatus,
-} from "../store/orders.ts";
-import { toOrderResponse } from "../representations/orders.ts";
-import { problem } from "../problem.ts";
-import { findKey, saveKey } from "../store/idempotency.ts";
+} from "../store/orders.js";
+import { toOrderResponse } from "../representations/orders.js";
+import { problem } from "../problem.js";
+import { findKey, saveKey } from "../store/idempotency.js";
 import { z } from "zod";
-import { findPackageById } from "../store/packages.ts";
+import { findPackageById } from "../store/packages.js";
 
 export const ordersRouter = Router();
 

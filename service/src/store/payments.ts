@@ -1,4 +1,4 @@
-import { pool } from "../app.ts";
+import { pool } from "../app.js";
 
 export interface PaymentRow {
   id: string;
@@ -11,7 +11,7 @@ export interface PaymentRow {
 export async function findPaymentById(id: string): Promise<PaymentRow | null> {
   const { rows } = await pool.query<PaymentRow>(
     `SELECT * FROM payments WHERE id = $1`,
-    [id]
+    [id],
   );
   return rows[0] ?? null;
 }
@@ -28,18 +28,15 @@ export async function createPayment(data: {
       VALUES ($1, $2, $3, $4)
       RETURNING *
     `,
-    [
-      data.id,
-      data.orderId,
-      data.amount,
-      data.status,
-    ]
+    [data.id, data.orderId, data.amount, data.status],
   );
 
   return rows[0];
 }
 
 export async function orderExists(orderId: string): Promise<boolean> {
-  const { rows } = await pool.query(`SELECT 1 FROM orders WHERE id = $1`, [orderId]);
+  const { rows } = await pool.query(`SELECT 1 FROM orders WHERE id = $1`, [
+    orderId,
+  ]);
   return rows.length > 0;
 }

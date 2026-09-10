@@ -1,4 +1,4 @@
-import type { PaymentRow } from "../store/payments.ts";
+import type { PaymentRow } from "../store/payments.js";
 
 export interface PaymentResponse {
   id: string;

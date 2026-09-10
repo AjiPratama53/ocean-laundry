@@ -1,4 +1,4 @@
-import { pool } from "../app.ts";
+import { pool } from "../app.js";
 import type { CreateOrderInput } from "../schemas/orders.js";
 import { randomUUID } from "crypto";
 

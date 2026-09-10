@@ -1,4 +1,4 @@
-import { PackageRow } from "../store/packages";
+import { PackageRow } from "../store/packages.js";
 
 export interface PackageResponse {
   id: string;

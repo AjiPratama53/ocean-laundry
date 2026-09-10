@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import { pool } from "../app.ts";
-import { CreatePackageInput } from "../schemas/packages.ts";
+import { pool } from "../app.js";
+import { CreatePackageInput } from "../schemas/packages.js";
 
 export interface PackageRow {
   id: string;

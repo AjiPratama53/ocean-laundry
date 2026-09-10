@@ -1,15 +1,15 @@
 import { Router } from "express";
 
 import type { Request, Response } from "express";
-import { toPackageResponse } from "../representations/packages";
+import { toPackageResponse } from "../representations/packages.js";
 import {
   findPackageById,
   findPackages,
   createPackage,
   updatePackage,
-} from "../store/packages";
-import { createPackageSchema, packageIdParamSchema } from "../schemas/packages";
-import { problem } from "../problem";
+} from "../store/packages.js";
+import { createPackageSchema, packageIdParamSchema } from "../schemas/packages.js";
+import { problem } from "../problem.js";
 
 export const packagesRouter = Router();
 

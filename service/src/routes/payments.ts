@@ -1,18 +1,16 @@
 import { Router } from "express";
 import { createHash, randomUUID } from "crypto";
-import { paymentIdParamSchema, createPaymentSchema } from "../schemas/payments.ts";
-import { findPaymentById, createPayment, orderExists } from "../store/payments.ts";
-import { toPaymentResponse } from "../representations/payments.ts";
-import { findKey, saveKey } from "../store/idempotency.ts";
-import { problem } from "../problem.ts";
+import { paymentIdParamSchema, createPaymentSchema } from "../schemas/payments.js";
+import { findPaymentById, createPayment, orderExists } from "../store/payments.js";
+import { toPaymentResponse } from "../representations/payments.js";
+import { findKey, saveKey } from "../store/idempotency.js";
+import { problem } from "../problem.js";
 import { z } from "zod";
 
 export const paymentsRouter = Router();
 
 function hashBody(body: unknown): string {
-  return createHash("sha256")
-    .update(JSON.stringify(body))
-    .digest("hex");
+  return createHash("sha256").update(JSON.stringify(body)).digest("hex");
 }
 
 const isUuid = (s: string) => z.string().uuid().safeParse(s).success;
@@ -24,7 +22,9 @@ paymentsRouter.get("/payments/:paymentId", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "validation-error", "Invalid payment id", req.originalUrl));
+      .json(
+        problem(400, "validation-error", "Invalid payment id", req.originalUrl),
+      );
   }
 
   // 3. Work
@@ -39,7 +39,6 @@ paymentsRouter.get("/payments/:paymentId", async (req, res) => {
   return res.status(200).json(toPaymentResponse(row));
 });
 
-
 // POST /v1/payments
 paymentsRouter.post("/payments", async (req, res) => {
   // 2. Validation
@@ -47,22 +46,43 @@ paymentsRouter.post("/payments", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(422, "validation-error", "Invalid request body", req.originalUrl));
+      .json(
+        problem(
+          422,
+          "validation-error",
+          "Invalid request body",
+          req.originalUrl,
+        ),
+      );
   }
 
   const idempotencyKey = req.header("Idempotency-Key");
 
-  // Idempotency-Key missing / malformed 
+  // Idempotency-Key missing / malformed
   if (!idempotencyKey || !isUuid(idempotencyKey)) {
     return res
       .status(400)
-      .json(problem(400, "validation-error", "Invalid or missing Idempotency-Key", req.originalUrl));
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "Invalid or missing Idempotency-Key",
+          req.originalUrl,
+        ),
+      );
   }
 
   if (!(await orderExists(parsed.data.orderId))) {
     return res
       .status(422)
-      .json(problem(422, "validation-error", "orderId does not reference an existing order", req.originalUrl));
+      .json(
+        problem(
+          422,
+          "validation-error",
+          "orderId does not reference an existing order",
+          req.originalUrl,
+        ),
+      );
   }
 
   const bodyHash = hashBody(parsed.data);
