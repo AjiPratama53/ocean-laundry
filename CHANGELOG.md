@@ -1,6 +1,9 @@
 # Contract changelog
+
 ## 2026-30-08 - v0.1.0
+
 Initial contract for OceanLaundry API.
+
 - Resources: Package, Order, Payment (schemas with `required` arrays and
   per-property examples).
 - Problem schema with reusable error responses: ValidationError
@@ -16,6 +19,7 @@ Initial contract for OceanLaundry API.
 - Bearer auth (JWT) declared globally.
 
 ## 2026-01-09 - v0.1.1
+
 - Added `description` field to `Order.totalAmount`, `Payment.amount`, and
   `CreatePaymentRequest.amount` clarifying values are in minor unit of IDR.
 - Removed non-standard `currency: "IDR"` key from the same fields (not a
@@ -23,6 +27,7 @@ Initial contract for OceanLaundry API.
   the global note in `info.description`).
 
 ## 2026-04-09 - v0.2.0
+
 - **BREAKING:** Removed `weighed` from `OrderStatus` enum. This state was
   unreachable in practice, the implementation always transitioned
   directly from `picked_up` to `awaiting_payment` in a single step when
@@ -34,3 +39,8 @@ Initial contract for OceanLaundry API.
   `status=awaiting_payment`.
 - Clients storing or comparing raw `status` string values should drop
   any reference to `"weighed"`.
+
+## 2026-04-09 - v0.2.1
+
+- Added `description` field to `Package` resource, schemas, and instances.
+- Added `DELETE` method using `DELETE /packages/{packageId}` endpoint for `Package` resource.
