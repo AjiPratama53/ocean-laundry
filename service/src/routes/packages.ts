@@ -7,8 +7,12 @@ import {
   findPackages,
   createPackage,
   updatePackage,
+  deletePackage,
 } from "../store/packages.js";
-import { createPackageSchema, packageIdParamSchema } from "../schemas/packages.js";
+import {
+  createPackageSchema,
+  packageIdParamSchema,
+} from "../schemas/packages.js";
 import { problem } from "../problem.js";
 
 export const packagesRouter = Router();
@@ -22,7 +26,14 @@ packagesRouter.get(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid package id", req.originalUrl));
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "Invalid package id",
+            req.originalUrl,
+          ),
+        );
     }
 
     // 3. Work
@@ -30,7 +41,7 @@ packagesRouter.get(
     if (!row) {
       return res
         .status(404)
-        .json(problem(404, "not-found" ,"Package not found", req.originalUrl));
+        .json(problem(404, "not-found", "Package not found", req.originalUrl));
     }
 
     // 4. Representation + 5. Response
@@ -56,7 +67,14 @@ packagesRouter.post("/packages", async (req: Request, res: Response) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json(problem(400, "validation-error", "Invalid package data", req.originalUrl));
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "Invalid package data",
+          req.originalUrl,
+        ),
+      );
   }
 
   // 3. Work
@@ -68,7 +86,14 @@ packagesRouter.post("/packages", async (req: Request, res: Response) => {
     console.error("Error creating package:", error);
     return res
       .status(500)
-      .json(problem(500, "internal-server-error", "Internal server error", req.originalUrl));
+      .json(
+        problem(
+          500,
+          "internal-server-error",
+          "Internal server error",
+          req.originalUrl,
+        ),
+      );
   }
 });
 
@@ -81,14 +106,28 @@ packagesRouter.patch(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid package id", req.originalUrl));
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "Invalid package id",
+            req.originalUrl,
+          ),
+        );
     }
 
     const { packageName, packagePrice } = req.body;
     if (packageName === undefined && packagePrice === undefined) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "No fields to update", req.originalUrl));
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "No fields to update",
+            req.originalUrl,
+          ),
+        );
     }
 
     // 3. Work
@@ -100,7 +139,9 @@ packagesRouter.patch(
       if (!row) {
         return res
           .status(404)
-          .json(problem(404, "not-found", "Package not found", req.originalUrl));
+          .json(
+            problem(404, "not-found", "Package not found", req.originalUrl),
+          );
       }
 
       // 4. Representation + 5. Response
@@ -109,7 +150,46 @@ packagesRouter.patch(
       console.error("Error updating package:", error);
       return res
         .status(500)
-        .json(problem(500, "internal-server-error", "Internal server error", req.originalUrl));
+        .json(
+          problem(
+            500,
+            "internal-server-error",
+            "Internal server error",
+            req.originalUrl,
+          ),
+        );
     }
+  },
+);
+
+// DELETE /v1/packages/{packageId}
+packagesRouter.get(
+  "/packages/:packageId",
+  async (req: Request, res: Response) => {
+    // 2. Validation
+    const parsed = packageIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "Invalid package id",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    // 3. Work
+    const row = await deletePackage(parsed.data.packageId);
+    if (!row) {
+      return res
+        .status(404)
+        .json(problem(404, "not-found", "Package not found", req.originalUrl));
+    }
+
+    // 4. Representation + 5. Response
+    return res.status(200).json(toPackageResponse(row));
   },
 );

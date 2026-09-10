@@ -90,3 +90,11 @@ export async function updatePackage(
 
   return rows[0] ?? null;
 }
+
+export async function deletePackage(id: string): Promise<PackageRow | null> {
+  const { rows } = await pool.query<PackageRow>(
+    `DELETE FROM packages WHERE id = $1 RETURNING *`,
+    [id],
+  );
+  return rows[0] ?? null;
+}
