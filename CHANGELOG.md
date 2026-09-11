@@ -44,3 +44,7 @@ Initial contract for OceanLaundry API.
 
 - Added `description` field to `Package` resource, schemas, and instances.
 - Added `DELETE` method using `DELETE /packages/{packageId}` endpoint for `Package` resource.
+
+## 2026-04-09 - v0.2.2
+
+- Removed `paid` status from orders resource due to redundancy. 
