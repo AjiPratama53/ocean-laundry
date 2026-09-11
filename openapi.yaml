@@ -315,6 +315,28 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+  
+  /orders/{orderId}/cancel:
+    post:
+      summary: Cancel an order
+      operationId: cancelOrder
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      description: |
+        Cancels an order that has not yet been paid. Typically called by
+        an automated job when an order sits in awaiting_payment too long,
+        but may also be usable by a customer or staff.
+      responses:
+        "200":
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /payments:
     post:
@@ -460,6 +482,7 @@ components:
         - ready
         - delivering
         - completed
+        - cancelled
 
     Order:
       type: object
