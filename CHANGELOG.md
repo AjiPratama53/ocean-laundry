@@ -48,3 +48,5 @@ Initial contract for OceanLaundry API.
 ## 2026-04-09 - v0.2.2
 
 - Removed `paid` status from orders resource due to redundancy. 
+- Added `cancelled` status reachable from `placed` and `awaiting_payments` status.
+
