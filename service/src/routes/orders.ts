@@ -438,3 +438,41 @@ ordersRouter.post(
     return res.status(200).json(toOrderResponse(updated));
   },
 );
+
+// POST	/v1/orders/{orderId}/cancel
+ordersRouter.post(
+  "/orders/:orderId/cancel",
+  async (req: Request, res: Response) => {
+    const parsed = orderIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
+    }
+
+    const order = await findOrderById(parsed.data.orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
+    }
+
+    if (order.status !== "placed" && order.status !== "awaiting_payment") {
+      return res
+        .status(409)
+        .json(
+          problem(
+            409,
+            "conflict",
+            `Order status must be 'placed' or 'awaiting_payment' to be cancelled, current status: ${order.status}`,
+            req.originalUrl,
+          ),
+        );
+    }
+
+    const updated = await updateOrderStatus(order.id, "cancelled");
+    return res.status(200).json(toOrderResponse(updated));
+  },
+);
