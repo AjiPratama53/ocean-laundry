@@ -11,7 +11,13 @@
             "source": "/v1/(.*)", 
             "destination": { 
                 "service": "service"
-            } 
+            }
+        },
+        { 
+            "source": "/health", 
+            "destination": { 
+                "service": "service"
+            }
         }
     ]
 }
