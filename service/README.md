@@ -32,7 +32,7 @@
 |---|---|---|---|---|---|
 | `packages:read` | Melihat daftar package | ya | - | ya | - |
 | `packages:write` | Membuat/mengubah/menghapus package | - | - | ya | - |
-| `orders:read` | Membaca order yang terlihat oleh pemanggil | ya | ya | ya | - |
+| `orders:read` | Membaca order yang terlihat oleh pemanggil | ya | ya | ya | ya |
 | `orders:write` | Membuat dan membatalkan order milik sendiri | ya | - | - | ya |
 | `orders:fulfil` | Menimbang, memulai cuci, menandai siap | - | - | ya | - |
 | `deliveries:write` | Mengambil dan mengantarkan order | - | ya | - | - |

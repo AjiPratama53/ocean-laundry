@@ -15,7 +15,8 @@ CREATE TABLE orders (
   status TEXT NOT NULL DEFAULT 'placed',
   weight_grams INTEGER,
   total_amount INTEGER,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT NULL
 );
 
 CREATE TABLE payments (

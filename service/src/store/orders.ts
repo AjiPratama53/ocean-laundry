@@ -21,6 +21,7 @@ export interface OrderRow {
   weight_grams: number | null;
   total_amount: number | null;
   created_at: Date;
+  updated_at: Date | null;
 }
 
 export async function findOrderById(id: string): Promise<OrderRow | null> {
@@ -88,7 +89,8 @@ export async function updateOrderStatus(
    SET 
     status = $1, 
     weight_grams = COALESCE($2, weight_grams), 
-    total_amount = COALESCE($3, total_amount) 
+    total_amount = COALESCE($3, total_amount),
+    updated_at = now()
   WHERE id = $4 
   RETURNING *`,
     [newStatus, extra?.weighGrams ?? null, extra?.totalAmount ?? null, id],

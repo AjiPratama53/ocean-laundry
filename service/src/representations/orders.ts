@@ -10,6 +10,7 @@ export interface OrderResponse {
   weightGrams: number | null;
   totalAmount: number | null;
   createdAt: string;
+  updatedAt: string | null;
 }
 
 export function toOrderResponse(row: OrderRow): OrderResponse {
@@ -23,6 +24,7 @@ export function toOrderResponse(row: OrderRow): OrderResponse {
     weightGrams: row.weight_grams,
     totalAmount: row.total_amount,
     createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at ? row.updated_at.toISOString() : null, 
     // any internal-only column (e.g. a soft-delete flag) simply isn't listed here
   };
 }

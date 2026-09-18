@@ -387,10 +387,25 @@ paths:
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    oauth2:
+      type: oauth2
+      description: |
+        Access tokens are issued by the OceanLaundry authorisation server.
+        Public clients use Authorization Code + PKCE with no client secret.
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/token
+          refreshUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/token
+          scopes:
+            packages:read: Melihat daftar package
+            packages:write: Membuat, mengubah, menghapus package
+            orders:read: Membaca order yang terlihat oleh pemanggil
+            orders:write: Membuat dan membatalkan order milik sendiri
+            orders:fulfil: Menimbang, memulai cuci, menandai siap
+            deliveries:write: Mengambil dan mengantarkan order
+            payments:read: Membaca data pembayaran
+            payments:write: Membuat pembayaran
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
@@ -523,6 +538,10 @@ components:
           type: string
           format: date-time
           example: "2026-08-30T10:00:00Z"
+        updatedAt:
+          type: [string, "null"]
+          format: date-time
+          example: "2026-08-30T10:15:00Z"
 
     CreateOrderRequest:
       type: object
