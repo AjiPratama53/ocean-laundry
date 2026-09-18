@@ -8,7 +8,16 @@ export interface OrderRow {
   courier_id: string | null;
   package_id: string;
   pickup_address: string;
-  status: string;
+  status:
+    | "placed"
+    | "picked_up"
+    | "weighed"
+    | "awaiting_payment"
+    | "washing"
+    | "ready"
+    | "delivering"
+    | "completed"
+    | "cancelled";
   weight_grams: number | null;
   total_amount: number | null;
   created_at: Date;
@@ -62,7 +71,16 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderRow> {
 
 export async function updateOrderStatus(
   id: string,
-  newStatus: string,
+  newStatus:
+    | "placed"
+    | "picked_up"
+    | "weighed"
+    | "awaiting_payment"
+    | "washing"
+    | "ready"
+    | "delivering"
+    | "completed"
+    | "cancelled",
   extra?: { weighGrams?: number; totalAmount?: number },
 ) {
   const { rows } = await pool.query<OrderRow>(
