@@ -12,6 +12,12 @@
             "destination": { 
                 "service": "service"
             } 
+        },
+        {
+            "source": "/health",
+            "destination": {
+                "service": "service"
+            }
         }
     ]
 }
