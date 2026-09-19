@@ -10,9 +10,11 @@ import express from "express";
 import { ordersRouter } from "./routes/orders.js";
 import { packagesRouter } from "./routes/packages.js";
 import { paymentsRouter } from "./routes/payments.js";
+import { authenticate } from "./auth/authenticate.js";
 
 const app = express();
 app.use(express.json());
+app.use(authenticate);
 app.use("/v1", ordersRouter);
 app.use("/v1", packagesRouter);
 app.use("/v1", paymentsRouter);
