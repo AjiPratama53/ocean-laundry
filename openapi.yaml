@@ -4,7 +4,7 @@ info:
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
-  version: 0.1.0
+  version: 0.3.0
   description: |
     Layanan laundry antar-jemput yang menghubungkan customer, kurir, dan staff
     outlet dalam satu alur: pemilihan paket, penjemputan, penimbangan &
@@ -20,7 +20,7 @@ servers:
     description: Local development
 
 security:
-  - bearerAuth: []
+  - oauth2: [packages:read]
 
 paths:
   /packages:
@@ -36,6 +36,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Package"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "400":
@@ -43,6 +47,8 @@ paths:
     post:
       summary: Create a package
       operationId: createPackage
+      security:
+        - oauth2: [packages:write]
       requestBody:
         required: true
         content:
@@ -56,6 +62,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Package"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationError"
 
@@ -72,12 +82,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Package"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
     patch:
       summary: Update a package
       operationId: updatePackage
+      security:
+        - oauth2: [packages:write]
       parameters:
         - $ref: "#/components/parameters/PackageId"
       requestBody:
@@ -93,12 +109,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Package"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
     delete:
       summary: Delete a package
       operationId: deletePackage
+      security:
+        - oauth2: [packages:write]
       parameters:
         - $ref: "#/components/parameters/PackageId"
       responses:
@@ -108,6 +130,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Package"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -115,6 +141,8 @@ paths:
     get:
       summary: Get orders
       operationId: getOrders
+      security:
+        - oauth2: [orders:read]
       parameters:
         - name: status
           in: query
@@ -145,12 +173,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "400":
           $ref: "#/components/responses/ValidationError"
 
     post:
       summary: Create an order
       operationId: createOrder
+      security:
+        - oauth2: [orders:write]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -166,6 +200,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
@@ -175,6 +213,8 @@ paths:
     get:
       summary: Get an order
       operationId: getOrder
+      security:
+        - oauth2: [orders:read]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       responses:
@@ -184,6 +224,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -191,6 +235,8 @@ paths:
     post:
       summary: Pick up an order
       operationId: pickupOrder
+      security:
+        - oauth2: [deliveries:write]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       description: Kurir mengambil laundry dari customer.
@@ -201,6 +247,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -210,6 +260,8 @@ paths:
     post:
       summary: Weigh an order
       operationId: weighOrder
+      security:
+        - oauth2: [orders:fulfil]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       description: Staff menimbang laundry dan menetapkan harga. Transitions the order from picked_up to awaiting_payment.
@@ -233,6 +285,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -244,6 +300,8 @@ paths:
     post:
       summary: Start washing an order
       operationId: startWashing
+      security:
+        - oauth2: [orders:fulfil]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       description: Staff mulai mencuci laundry. 
@@ -254,6 +312,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -263,6 +325,8 @@ paths:
     post:
       summary: Mark order as ready
       operationId: markOrderReady
+      security:
+        - oauth2: [orders:fulfil]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       description: Staff menandai laundry sudah selesai dicuci.
@@ -273,6 +337,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -282,6 +350,8 @@ paths:
     post:
       summary: Start delivery
       operationId: startDelivery
+      security:
+        - oauth2: [deliveries:write]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       description: Kurir mengambil laundry yang sudah selesai untuk dikirim ke customer.
@@ -292,6 +362,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -301,6 +375,8 @@ paths:
     post:
       summary: Complete delivery
       operationId: completeDelivery
+      security:
+        - oauth2: [deliveries:write]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       description: Kurir menyerahkan laundry kepada customer.
@@ -311,6 +387,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -320,6 +400,9 @@ paths:
     post:
       summary: Cancel an order
       operationId: cancelOrder
+      security:
+        - oauth2: [orders:write]
+        - clientCredentials: [orders:write]
       parameters:
         - $ref: "#/components/parameters/OrderId"
       description: |
@@ -333,6 +416,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -342,6 +429,8 @@ paths:
     post:
       summary: Make a payment
       operationId: createPayment
+      security:
+        - oauth2: [payments:write]
       description: Records a payment for an order. Transitions the order from
         awaiting_payment to washing. Returns 409 if the order is not in
         awaiting_payment status.
@@ -360,6 +449,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "422":
@@ -369,6 +462,8 @@ paths:
     get:
       summary: Get a payment
       operationId: getPayment
+      security:
+        - oauth2: [payments:read]
       parameters:
         - name: paymentId
           in: path
@@ -382,6 +477,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -406,6 +505,15 @@ components:
             deliveries:write: Mengambil dan mengantarkan order
             payments:read: Membaca data pembayaran
             payments:write: Membuat pembayaran
+
+    clientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/token
+          scopes:
+            orders:read: Membaca order untuk mencari yang kedaluwarsa (automated job)
+            orders:write: Membatalkan order yang kedaluwarsa (automated job)
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
@@ -610,6 +718,28 @@ components:
           type: string
 
   responses:
+    Unauthorized:
+      description: The token is absent, unverifiable, or expired.
+      headers:
+        WWW-Authenticate:
+          schema: { type: string }
+          example: 'Bearer error="invalid_token"'
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    Forbidden:
+      description: The token is valid but does not carry the scope this operation requires.
+      headers:
+        WWW-Authenticate:
+          schema: { type: string }
+          example: 'Bearer error="insufficient_scope", scope="orders:fulfil"'
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    
     Conflict:
       description: Request conflicts with the current state.
       content:
@@ -637,7 +767,9 @@ components:
             instance: /v1/orders/ord_001/weigh
 
     NotFound:
-      description: Resource not found.
+      description: |
+        The object does not exist, or it exists and is not accessible to this caller.
+        Both conditions are answered identically so identifiers cannot be enumerated.
       content:
         application/problem+json:
           schema:
