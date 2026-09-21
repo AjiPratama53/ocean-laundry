@@ -501,7 +501,7 @@ components:
             packages:write: Membuat, mengubah, menghapus package
             orders:read: Membaca order yang terlihat oleh pemanggil
             orders:write: Membuat dan membatalkan order milik sendiri
-            orders:fulfil: Menimbang, memulai cuci, menandai siap
+            orders:fulfil: Menimbang, memulai cuci, menandai siap, menandai selesai
             deliveries:write: Mengambil dan mengantarkan order
             payments:read: Membaca data pembayaran
             payments:write: Membuat pembayaran
