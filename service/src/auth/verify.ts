@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { config } from '../config.js'; // ??
+import { config } from '../config.js';
 
 // Public keys are fetched once and cached; do not build a new JWKSet per
 // request, because that means one outbound HTTP call per API request.
