@@ -67,6 +67,3 @@ Initial contract for OceanLaundry API.
   job, scoped to `orders:read`/`orders:write` only.
 - `401`/`403` responses on every protected operation.
 - `updatedAt` field on `Order`, tracking the last status transition.
-
-## [0.3.1] — 2026-09-19
-- Added `menandai selesai` to `orders:fulfil`
