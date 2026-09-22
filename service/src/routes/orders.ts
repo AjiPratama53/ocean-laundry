@@ -423,7 +423,7 @@ ordersRouter.post(
 // POST	/v1/orders/{orderId}/complete
 ordersRouter.post(
   "/orders/:orderId/complete",
-  requireScope("orders:fulfil"),
+  requireScope("deliveries:write"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
