@@ -9,12 +9,12 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:contract": "redocly lint ../openapi.yaml",
     "test:authz": "vitest run tests/contract/authz",
     "dev": "tsx watch src/app.ts",
     "build:local": "tsc",
     "start": "node dist/app.js"
-  }
-  ,
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AjiPratama53/ocean-laundry.git"

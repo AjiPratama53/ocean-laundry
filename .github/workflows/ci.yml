@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ocean_laundry_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: service
+
+    env:
+      OIDC_ISSUER: https://test.local/ocean-laundry
+      OIDC_AUDIENCE: ocean-laundry-api
+      OIDC_JWKS_URI: http://127.0.0.1:9999/jwks.json
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ocean_laundry_test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: service/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Initialize test database schema and seed
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d ocean_laundry_test -f db/schema.sql
+          PGPASSWORD=postgres psql -h localhost -U postgres -d ocean_laundry_test -f db/seed.sql
+
+      - name: Build service
+        run: npm run build:local
+
+      - name: Run contract validation
+        run: npm run test:contract
+
+      - name: Run authorization tests
+        run: npm run test:authz
+
+      - name: Run logger & ownership verification
+        run: npx tsx scripts/verify-logger-ownership.ts
