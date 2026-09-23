@@ -2,9 +2,12 @@ import "dotenv/config";
 import { Pool } from "pg";
 import { fileURLToPath } from "url";
 
+const databaseUrl = process.env.DATABASE_URL ?? "";
+const isLocalDb = /localhost|127\.0\.0\.1/.test(databaseUrl);
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  connectionString: databaseUrl,
+  ssl: isLocalDb ? false : { rejectUnauthorized: false },
 });
 
 import express from "express";
