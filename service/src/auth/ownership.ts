@@ -66,13 +66,13 @@ export function mayReadPayment(
   _payment: PaymentRow,
   order: OrderRow,
 ): boolean {
-  if (
-    order.customer_id === p.subject &&
-    p.scopes.includes("payments:read")
-  ) {
+  if (order.customer_id === p.subject && p.scopes.includes("payments:read")) {
     return true;
   }
-  if (p.scopes.includes("payments:read")) return true;
+  if (p.scopes.includes("orders:fulfil") && p.scopes.includes("payments:read")) {
+    return true; // staff
+  }
+  if (p.kind === "service" && p.scopes.includes("payments:read")) return true;
   return false;
 }
 

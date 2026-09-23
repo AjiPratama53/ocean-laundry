@@ -8,11 +8,13 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:authz": "vitest run tests/contract/authz",
     "dev": "tsx watch src/app.ts",
     "build:local": "tsc",
     "start": "node dist/app.js"
-  },
+  }
+  ,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AjiPratama53/ocean-laundry.git"
@@ -31,8 +33,11 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.4.1",
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.0",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "5.0.1"
   },
   "dependencies": {
     "crypto": "^1.0.1",
