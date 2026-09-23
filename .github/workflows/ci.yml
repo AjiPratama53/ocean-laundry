@@ -30,7 +30,10 @@ jobs:
     env:
       OIDC_ISSUER: https://test.local/ocean-laundry
       OIDC_AUDIENCE: ocean-laundry-api
-      OIDC_JWKS_URI: http://127.0.0.1:9999/jwks.json
+      OIDC_JWKS_URI: http://127.0.0.1:9999/jwks.json  # placeholder only — overridden at runtime by
+                                                         # tests/helpers/app.ts's getTestContext(), which
+                                                         # points this at the real dynamic-port JWKS server
+                                                         # started by startTestAuthServer() before src/app.js loads
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ocean_laundry_test
 
     steps:
@@ -60,9 +63,6 @@ jobs:
 
       - name: Run contract tests
         run: npm run test:contract
-
-      - name: Run authorization tests
-        run: npm run test:authz
 
       - name: Run authorization tests
         run: npm run test:authz
