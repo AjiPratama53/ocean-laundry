@@ -13,7 +13,7 @@ import {
   createPackageSchema,
   packageIdParamSchema,
 } from "../schemas/packages.js";
-import { problem } from "../problem.js";
+import { problem, sendProblem } from "../problem.js";
 
 export const packagesRouter = Router();
 
@@ -73,22 +73,14 @@ packagesRouter.post(
     // 2. Validation
     const parsed = createPackageSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json(
-          problem(
-            400,
-            "validation-error",
-            "Invalid package data",
-            req.originalUrl,
-          ),
-        );
+      return sendProblem(res, 422, "validation-error", "Invalid package data", req.originalUrl);
     }
 
     // 3. Work
     try {
       const row = await createPackage(parsed.data);
       // 4. Representation + 5. Response
+      res.setHeader("Location", `/v1/packages/${row.id}`);
       return res.status(201).json(toPackageResponse(row));
     } catch (error) {
       req.log.error({ err: error }, "Error creating package");

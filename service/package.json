@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "vitest run",
-    "test:contract": "redocly lint ../openapi.yaml",
+    "lint:openapi": "redocly lint ../openapi.yaml",
+    "test:contract": "vitest run tests/contract/openapi",
     "test:authz": "vitest run tests/contract/authz",
     "dev": "tsx watch src/app.ts",
     "build:local": "tsc",

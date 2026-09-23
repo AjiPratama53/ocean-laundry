@@ -3,16 +3,17 @@ import { z } from "zod";
 const orderStatusEnum = z.enum([
   "placed",
   "picked_up",
+  "weighed",
   "awaiting_payment",
-  "paid",
   "washing",
   "ready",
   "delivering",
   "completed",
+  "cancelled",
 ]);
 
 export const orderIdParamSchema = z.object({
-  orderId: z.string().min(1),
+  orderId: z.string().regex(/^ord_[0-9a-f-]{36}$/i, "Invalid order id"),
 });
 
 export const getOrdersQuerySchema = z.object({

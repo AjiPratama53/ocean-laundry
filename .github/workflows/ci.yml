@@ -55,8 +55,14 @@ jobs:
       - name: Build service
         run: npm run build:local
 
-      - name: Run contract validation
+      - name: Lint OpenAPI contract
+        run: npm run lint:openapi
+
+      - name: Run contract tests
         run: npm run test:contract
+
+      - name: Run authorization tests
+        run: npm run test:authz
 
       - name: Run authorization tests
         run: npm run test:authz

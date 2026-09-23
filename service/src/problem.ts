@@ -60,3 +60,17 @@ export function forbidden(res: Response, instance: string, needed: string[]) {
     ),
   );
 }
+
+export function sendProblem(
+  res: Response,
+  status: number,
+  type: ProblemType,
+  detail: string,
+  instance: string,
+  extensions?: Record<string, unknown>,
+) {
+  return res
+    .status(status)
+    .type("application/problem+json")
+    .json(problem(status, type, detail, instance, extensions));
+}

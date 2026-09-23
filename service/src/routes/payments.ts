@@ -84,11 +84,11 @@ paymentsRouter.post(
     const order = await findOrderById(parsed.data.orderId);
     if (!order || !mayCreatePayment(req.principal!, order)) {
       return res
-        .status(404)
-        .json(problem(404, "not-found", "Order not found", req.originalUrl));
+        .status(422)   // was 404
+        .json(problem(422, "validation-error", "orderId does not reference an accessible order", req.originalUrl));
     }
 
-    const bodyHash = hashBody(parsed.data);
+    const bodyHash = hashBody(req.body);
 
     const existingKey = await findKey(idempotencyKey);
     if (existingKey) {
@@ -111,6 +111,12 @@ paymentsRouter.post(
       return res
         .status(existingKey.responseStatus)
         .json(existingKey.responseBody);
+    }
+
+    if (order.status !== "awaiting_payment") {
+      return res.status(409).json(
+        problem(409, "conflict", `Order status must be 'awaiting_payment' to accept payment, current status: ${order.status}`, req.originalUrl)
+      );
     }
 
     // 3. Work

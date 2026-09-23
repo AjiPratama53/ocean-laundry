@@ -160,7 +160,7 @@ ordersRouter.post(
       customerId: req.principal!.subject,
     };
 
-    const bodyHash = hashBody(orderInput);
+    const bodyHash = hashBody(req.body);
 
     const existingKey = await findKey(idempotencyKey);
     if (existingKey) {
