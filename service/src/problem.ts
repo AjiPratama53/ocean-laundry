@@ -5,7 +5,9 @@ export type ProblemType =
   | "not-found"
   | "conflict"
   | "idempotency-key-reuse"
-  | "internal-server-error";
+  | "internal-server-error"
+  | "unauthenticated"
+  | "insufficient-scope";
 
 const titles: Record<ProblemType, string> = {
   "validation-error": "Request validation failed",
@@ -13,6 +15,8 @@ const titles: Record<ProblemType, string> = {
   "conflict": "Order state conflict",
   "idempotency-key-reuse": "Idempotency-Key was reused with a different body",
   "internal-server-error": "Internal server error",
+  "unauthenticated": "Unauthenticated",
+  "insufficient-scope": "Insufficient scope",
 };
 
 export function problem(

@@ -91,7 +91,7 @@ packagesRouter.post(
       // 4. Representation + 5. Response
       return res.status(201).json(toPackageResponse(row));
     } catch (error) {
-      console.error("Error creating package:", error);
+      req.log.error({ err: error }, "Error creating package");
       return res
         .status(500)
         .json(
@@ -157,7 +157,7 @@ packagesRouter.patch(
       // 4. Representation + 5. Response
       return res.status(200).json(toPackageResponse(row));
     } catch (error) {
-      console.error("Error updating package:", error);
+      req.log.error({ err: error }, "Error updating package");
       return res
         .status(500)
         .json(

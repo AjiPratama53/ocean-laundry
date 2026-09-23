@@ -21,8 +21,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     req.principal = principalFrom(await verifyAccessToken(header.slice(7)));
     return next();
   } catch (err: any) {
-    // the reason for refusal is logged; the token never is
-    console.warn("Invalid token");
+    // the reason for refusal is logged; the token itself never is
+    req.log.warn({ err: err.message }, "Invalid token");
     return unauthorized(res, 'invalid_token');
   }
 }

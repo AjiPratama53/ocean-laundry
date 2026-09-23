@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { createHash, randomUUID } from "crypto";
 import { requireScope } from "../auth/require-scope.js";
+import { mayReadPayment, mayCreatePayment } from "../auth/ownership.js";
 import { paymentIdParamSchema, createPaymentSchema } from "../schemas/payments.js";
-import { findPaymentById, createPayment, orderExists } from "../store/payments.js";
+import { findPaymentWithOrderById, createPayment, findOrderById } from "../store/payments.js";
 import { toPaymentResponse } from "../representations/payments.js";
 import { findKey, saveKey } from "../store/idempotency.js";
 import { problem } from "../problem.js";
@@ -32,8 +33,8 @@ paymentsRouter.get(
     }
 
     // 3. Work
-    const row = await findPaymentById(parsed.data.paymentId);
-    if (!row) {
+    const row = await findPaymentWithOrderById(parsed.data.paymentId);
+    if (!row || !mayReadPayment(req.principal!, row, row.order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Payment not found", req.originalUrl));
@@ -53,7 +54,7 @@ paymentsRouter.post(
     const parsed = createPaymentSchema.safeParse(req.body);
     if (!parsed.success) {
       return res
-        .status(400)
+        .status(422)
         .json(
           problem(
             422,
@@ -80,17 +81,11 @@ paymentsRouter.post(
         );
     }
 
-    if (!(await orderExists(parsed.data.orderId))) {
+    const order = await findOrderById(parsed.data.orderId);
+    if (!order || !mayCreatePayment(req.principal!, order)) {
       return res
-        .status(422)
-        .json(
-          problem(
-            422,
-            "validation-error",
-            "orderId does not reference an existing order",
-            req.originalUrl,
-          ),
-        );
+        .status(404)
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
     const bodyHash = hashBody(parsed.data);

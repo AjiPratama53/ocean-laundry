@@ -2,6 +2,12 @@ import { Router, type Request, type Response } from "express";
 import { createHash } from "crypto";
 import { requireScope } from "../auth/require-scope.js";
 import {
+  mayReadOrder,
+  mayWriteOrder,
+  mayFulfilOrder,
+  mayDeliverOrder,
+} from "../auth/ownership.js";
+import {
   orderIdParamSchema,
   getOrdersQuerySchema,
   createOrderSchema,
@@ -9,7 +15,7 @@ import {
 import {
   createOrder,
   findOrderById,
-  findOrders,
+  findOrdersForPrincipal,
   packageExists,
   updateOrderStatus,
 } from "../store/orders.js";
@@ -45,7 +51,7 @@ ordersRouter.get(
 
     // 3. Work
     const row = await findOrderById(parsed.data.orderId);
-    if (!row) {
+    if (!row || !mayReadOrder(req.principal!, row)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -77,7 +83,7 @@ ordersRouter.get(
     }
 
     // 3. Work
-    const rows = await findOrders(parsed.data);
+    const rows = await findOrdersForPrincipal(req.principal!, parsed.data);
 
     // 4. Representation + 5. Response
     return res.status(200).json(rows.map(toOrderResponse));
@@ -106,6 +112,35 @@ ordersRouter.post(
 
     const idempotencyKey = req.header("Idempotency-Key");
 
+    // Only end-users may create orders; service accounts (e.g. the expiration job)
+    // may only cancel existing orders.
+    if (req.principal!.kind !== "user") {
+      return res
+        .status(403)
+        .json(
+          problem(
+            403,
+            "insufficient-scope",
+            "Only authenticated users may create orders",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    // The order must be placed on behalf of the authenticated principal.
+    if (parsed.data.customerId !== req.principal!.subject) {
+      return res
+        .status(400)
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "customerId does not match the authenticated user",
+            req.originalUrl,
+          ),
+        );
+    }
+
     // Idempotency-Key missing / malformed
     if (!idempotencyKey || !isUuid(idempotencyKey)) {
       return res
@@ -120,7 +155,12 @@ ordersRouter.post(
         );
     }
 
-    const bodyHash = hashBody(parsed.data);
+    const orderInput = {
+      ...parsed.data,
+      customerId: req.principal!.subject,
+    };
+
+    const bodyHash = hashBody(orderInput);
 
     const existingKey = await findKey(idempotencyKey);
     if (existingKey) {
@@ -160,7 +200,7 @@ ordersRouter.post(
 
     try {
       // 3. Work
-      const newOrder = await createOrder(parsed.data);
+      const newOrder = await createOrder(orderInput);
 
       // 4. Representation
       const responseBody = toOrderResponse(newOrder);
@@ -177,7 +217,7 @@ ordersRouter.post(
       // 5. Response
       return res.status(201).json(responseBody);
     } catch (error) {
-      console.error("Error creating order:", error);
+      req.log.error({ err: error }, "Error creating order");
       return res
         .status(500)
         .json(
@@ -207,7 +247,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayDeliverOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -246,7 +286,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayFulfilOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -318,7 +358,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayFulfilOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -357,7 +397,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayFulfilOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -396,7 +436,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayDeliverOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -435,7 +475,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayDeliverOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -474,7 +514,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayWriteOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
