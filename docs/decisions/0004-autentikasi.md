@@ -27,6 +27,29 @@
 | IoT Client | TBA | TBA | TBA | TBA |
 | MCP Client | TBA | TBA | TBA | TBA |
 
+### Scope vocabulary
+
+Vocabulary dirancang dari kapabilitas tiap aktor (Step 2), bukan dari daftar
+endpoint. Tabel lengkap scope, aktor, dan pemetaan operation→scope disimpan
+di `service/README.md` (bagian "Scope Vocabulary") agar satu sumber
+kebenaran (single source of truth) untuk kode dan dokumentasi.
+
+Ringkasan: 8 scope (`packages:read`, `packages:write`, `orders:read`,
+`orders:write`, `orders:fulfil`, `deliveries:write`, `payments:read`,
+`payments:write`), masing-masing bisa dijelaskan ke user dalam satu kalimat.
+
+### Step 10 - Refresh token rotation & reuse detection evidence
+
+Setting enabled: Keycloak → Realm Settings → Tokens →
+"Revoke Refresh Token" ON, "Refresh Token Max Reuse" = 0
+
+1. RT1 → RT2 rotation confirmed: RT1 != RT2 → True
+2. Reuse of already-used RT1:
+   {"error":"invalid_grant","error_description":"Maximum allowed refresh token reuse exceeded"}
+3. Subsequent attempt with RT2:
+   {"error":"invalid_grant","error_description":"Session doesn't have required client"}
+   → Confirms the whole session/token family was revoked, not just RT1.
+
 ## Decision
 
 Kami menggunakan Keycloak (self-hosted via Docker) sebagai authorisation
