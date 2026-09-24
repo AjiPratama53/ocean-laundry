@@ -84,7 +84,7 @@ describe("Contract — /payments", () => {
 
     expect(res.status).toBe(201);
     expect(Object.keys(res.body).sort()).toEqual([...PAYMENT_FIELDS].sort());
-    expect(res.body.status).toBe("paid");
+    expect(res.body.status).toBe("pending");
     seededPaymentIds.push(res.body.id);
   });
 
@@ -151,5 +151,36 @@ describe("Contract — /payments", () => {
       .set("Authorization", `Bearer ${readToken}`);
     expect(res.status).toBe(404);
     expect(res.body).toHaveProperty("status", 404);
+  });
+
+  describe("Status transitions", () => {
+    it("proceeding an already-paid payment returns 409, and status does not change again", async () => {
+      const order = await seedOrder(pool, { customerId: customer, status: "awaiting_payment" });
+      seededOrderIds.push(order.id);
+      const payment = await seedPayment(pool, { orderId: order.id, amount: 15000, status: "paid" });
+      seededPaymentIds.push(payment.id);
+
+      const res = await request(app)
+        .post(`/v1/payments/${payment.id}/proceed`)
+        .set("Authorization", `Bearer ${writeToken}`);
+
+      expect(res.status).toBe(409);
+
+      const check = await pool.query("SELECT status FROM payments WHERE id = $1", [payment.id]);
+      expect(check.rows[0].status).toBe("paid");
+    });
+
+    it("cancelling an already-failed payment returns 409", async () => {
+      const order = await seedOrder(pool, { customerId: customer, status: "awaiting_payment" });
+      seededOrderIds.push(order.id);
+      const payment = await seedPayment(pool, { orderId: order.id, amount: 15000, status: "failed" });
+      seededPaymentIds.push(payment.id);
+
+      const res = await request(app)
+        .post(`/v1/payments/${payment.id}/cancel`)
+        .set("Authorization", `Bearer ${writeToken}`);
+
+      expect(res.status).toBe(409);
+    });
   });
 });

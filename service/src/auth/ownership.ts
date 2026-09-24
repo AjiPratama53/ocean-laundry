@@ -47,7 +47,16 @@ export function mayFulfilOrder(p: Principal, _order: OrderRow): boolean {
 }
 
 /**
- * Who may perform delivery operations (pickup, delivery, complete):
+ * Who may claim an unassigned order for pickup:
+ * - any courier (deliveries:write) may claim an order with no courier yet
+ */
+export function mayClaimOrder(p: Principal, order: OrderRow): boolean {
+  return order.courier_id === null && p.scopes.includes("deliveries:write");
+}
+
+/**
+ * Who may perform delivery operations on an already-assigned order
+ * (delivery, complete):
  * - the courier assigned to the order
  */
 export function mayDeliverOrder(p: Principal, order: OrderRow): boolean {
@@ -86,3 +95,12 @@ export function mayCreatePayment(p: Principal, order: OrderRow): boolean {
   );
 }
 
+/**
+ * Who may create, proceed, or cancel a payment for an order:
+ * - the customer who owns the order
+ */
+export function mayModifyPayment(p: Principal, order: OrderRow): boolean {
+  return (
+    order.customer_id === p.subject && p.scopes.includes("payments:write")
+  );
+}

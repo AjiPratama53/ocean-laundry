@@ -237,7 +237,7 @@ describe("Contract — /orders", () => {
       const courier = randomUUID();
       const order = await seedOrder(pool, {
         customerId: customer,
-        courierId: courier,
+        courierId: null,
         status: "picked_up",
       });
       seededOrderIds.push(order.id);

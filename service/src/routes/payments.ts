@@ -1,10 +1,9 @@
 import { Router } from "express";
 import { createHash, randomUUID } from "crypto";
 import { requireScope } from "../auth/require-scope.js";
-import { mayReadPayment, mayCreatePayment } from "../auth/ownership.js";
+import { mayReadPayment, mayModifyPayment } from "../auth/ownership.js";
 import { paymentIdParamSchema, createPaymentSchema } from "../schemas/payments.js";
-import { findPaymentWithOrderById, createPayment, findOrderById } from "../store/payments.js";
-import { toPaymentResponse } from "../representations/payments.js";
+import { findPaymentWithOrderById, createPayment, findOrderById, proceedPayment, cancelPayment } from "../store/payments.js";import { toPaymentResponse } from "../representations/payments.js";
 import { findKey, saveKey } from "../store/idempotency.js";
 import { problem } from "../problem.js";
 import { z } from "zod";
@@ -82,7 +81,7 @@ paymentsRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order || !mayCreatePayment(req.principal!, order)) {
+    if (!order || !mayModifyPayment(req.principal!, order)) {
       return res
         .status(422)   // was 404
         .json(problem(422, "validation-error", "orderId does not reference an accessible order", req.originalUrl));
@@ -125,8 +124,7 @@ paymentsRouter.post(
       orderId: parsed.data.orderId,
       amount: parsed.data.amount,
 
-      // TODO: Ganti ketika integrasi payment gateway
-      status: "paid",
+      status: "pending",
     });
 
     // 4. Representation
@@ -141,5 +139,80 @@ paymentsRouter.post(
 
     // 5. Response
     return res.status(201).json(responseBody);
+  }
+);
+
+// POST /v1/payments/{paymentId}/proceed
+paymentsRouter.post(
+  "/payments/:paymentId/proceed",
+  requireScope("payments:write"),
+  async (req, res) => {
+    // 2. Validation
+    const parsed = paymentIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(problem(400, "validation-error", "Invalid payment id", req.originalUrl));
+    }
+
+    // 3. Work
+    const row = await findPaymentWithOrderById(parsed.data.paymentId);
+    if (!row || !mayModifyPayment(req.principal!, row.order)) {
+      return res
+        .status(404)
+        .json(problem(404, "not-found", "Payment not found", req.originalUrl));
+    }
+
+    if (row.status !== "pending") {
+      return res
+        .status(409)
+        .json(problem(409, "conflict", `Payment is ${row.status}, cannot proceed`, req.originalUrl));
+    }
+
+    const updated = await proceedPayment(row.id); // pending->paid + order->washing, guarded
+    if (!updated) {
+      return res
+        .status(409)
+        .json(problem(409, "conflict", "Payment status changed concurrently", req.originalUrl));
+    }
+
+    // 4/5. Representation + Response
+    return res.status(200).json(toPaymentResponse(updated));
+  }
+);
+
+// POST /v1/payments/{paymentId}/cancel
+paymentsRouter.post(
+  "/payments/:paymentId/cancel",
+  requireScope("payments:write"),
+  async (req, res) => {
+    const parsed = paymentIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(problem(400, "validation-error", "Invalid payment id", req.originalUrl));
+    }
+
+    const row = await findPaymentWithOrderById(parsed.data.paymentId);
+    if (!row || !mayModifyPayment(req.principal!, row.order)) {
+      return res
+        .status(404)
+        .json(problem(404, "not-found", "Payment not found", req.originalUrl));
+    }
+
+    if (row.status !== "pending") {
+      return res
+        .status(409)
+        .json(problem(409, "conflict", `Payment is ${row.status}, cannot cancel`, req.originalUrl));
+    }
+
+    const updated = await cancelPayment(row.id); // pending->failed, guarded
+    if (!updated) {
+      return res
+        .status(409)
+        .json(problem(409, "conflict", "Payment status changed concurrently", req.originalUrl));
+    }
+
+    return res.status(200).json(toPaymentResponse(updated));
   }
 );

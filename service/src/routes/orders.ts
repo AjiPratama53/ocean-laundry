@@ -6,6 +6,8 @@ import {
   mayWriteOrder,
   mayFulfilOrder,
   mayDeliverOrder,
+  mayClaimOrder,
+
 } from "../auth/ownership.js";
 import {
   orderIdParamSchema,
@@ -18,6 +20,7 @@ import {
   findOrdersForPrincipal,
   packageExists,
   updateOrderStatus,
+  assignCourierAndUpdateStatus
 } from "../store/orders.js";
 import { toOrderResponse } from "../representations/orders.js";
 import { problem } from "../problem.js";
@@ -241,13 +244,11 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(
-          problem(400, "validation-error", "Invalid order id", req.originalUrl),
-        );
+        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order || !mayDeliverOrder(req.principal!, order)) {
+    if (!order || !mayClaimOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -256,17 +257,22 @@ ordersRouter.post(
     if (order.status !== "placed") {
       return res
         .status(409)
+        .json(problem(409, "conflict", `Order status must be 'placed' to pick up, current status: ${order.status}`, req.originalUrl));
+    }
+
+    const updated = await assignCourierAndUpdateStatus(order.id, req.principal!.subject, "picked_up");
+    if (!updated) {
+      return res
+        .status(409)
         .json(
           problem(
             409,
             "conflict",
-            `Order status must be 'placed' to pick up, current status: ${order.status}`,
+            "Order was claimed by another courier or its status changed concurrently",
             req.originalUrl,
           ),
         );
     }
-
-    const updated = await updateOrderStatus(order.id, "picked_up");
     return res.status(200).json(toOrderResponse(updated));
   },
 );

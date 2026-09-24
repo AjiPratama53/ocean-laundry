@@ -156,3 +156,18 @@ export async function packageExists(packageId: string): Promise<boolean> {
   ]);
   return rows.length > 0;
 }
+
+export async function assignCourierAndUpdateStatus(
+  id: string,
+  courierId: string,
+  newStatus: OrderRow["status"],
+) {
+  const { rows } = await pool.query<OrderRow>(
+    `UPDATE orders
+        SET status = $1, courier_id = $2, updated_at = now()
+      WHERE id = $3 AND courier_id IS NULL AND status = 'placed'
+      RETURNING *`,
+    [newStatus, courierId, id],
+  );
+  return rows[0] ?? null;
+}
