@@ -6,6 +6,11 @@ import { paymentIdParamSchema, createPaymentSchema } from "../schemas/payments.j
 import { findPaymentWithOrderById, createPayment, findOrderById, proceedPayment, cancelPayment } from "../store/payments.js";import { toPaymentResponse } from "../representations/payments.js";
 import { findKey, saveKey } from "../store/idempotency.js";
 import { problem } from "../problem.js";
+import {
+  etagFor,
+  invalidParams,
+  sendConditional,
+} from "../middleware/http-cache.js";
 import { z } from "zod";
 
 export const paymentsRouter = Router();
@@ -27,7 +32,8 @@ paymentsRouter.get(
       return res
         .status(400)
         .json(
-          problem(400, "validation-error", "Invalid payment id", req.originalUrl),
+          problem(400, "validation-error", "Invalid payment id", req.originalUrl,
+            invalidParams(parsed.error.issues)),
         );
     }
 
@@ -39,8 +45,10 @@ paymentsRouter.get(
         .json(problem(404, "not-found", "Payment not found", req.originalUrl));
     }
 
-    // 4. Representation + 5. Response
-    return res.status(200).json(toPaymentResponse(row));
+    // 4. Representation + 5. Response (conditional read, A.7)
+    const body = toPaymentResponse(row);
+    sendConditional(req, res, body, etagFor(row));
+    return;
 }
 );
 
@@ -60,6 +68,7 @@ paymentsRouter.post(
             "validation-error",
             "Invalid request body",
             req.originalUrl,
+            invalidParams(parsed.error.issues),
           ),
         );
     }

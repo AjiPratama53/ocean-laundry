@@ -7,6 +7,7 @@ export type ProblemType =
   | "idempotency-key-reuse"
   | "internal-server-error"
   | "unauthenticated"
+  | "precondition-failed"
   | "insufficient-scope";
 
 const titles: Record<ProblemType, string> = {
@@ -16,6 +17,7 @@ const titles: Record<ProblemType, string> = {
   "idempotency-key-reuse": "Idempotency-Key was reused with a different body",
   "internal-server-error": "Internal server error",
   "unauthenticated": "Unauthenticated",
+  "precondition-failed": "Precondition failed",
   "insufficient-scope": "Insufficient scope",
 };
 

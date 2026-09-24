@@ -14,6 +14,12 @@ import {
   packageIdParamSchema,
 } from "../schemas/packages.js";
 import { problem, sendProblem } from "../problem.js";
+import {
+  checkPrecondition,
+  etagFor,
+  invalidParams,
+  sendConditional,
+} from "../middleware/http-cache.js";
 
 export const packagesRouter = Router();
 
@@ -33,6 +39,7 @@ packagesRouter.get(
             "validation-error",
             "Invalid package id",
             req.originalUrl,
+            invalidParams(parsed.error.issues),
           ),
         );
     }
@@ -45,8 +52,10 @@ packagesRouter.get(
         .json(problem(404, "not-found", "Package not found", req.originalUrl));
     }
 
-    // 4. Representation + 5. Response
-    return res.status(200).json(toPackageResponse(row));
+    // 4. Representation + 5. Response (conditional read, A.7)
+    const body = toPackageResponse(row);
+    sendConditional(req, res, body, etagFor(row));
+    return;
   },
 );
 
@@ -60,8 +69,10 @@ packagesRouter.get(
       limit: 20, // default limit
     });
 
-    // 3. Representation + 4. Response
-    return res.status(200).json(rows.map(toPackageResponse));
+    // 3. Representation + 4. Response (conditional read, A.7)
+    const body = rows.map(toPackageResponse);
+    sendConditional(_req, res, body, etagFor(body));
+    return;
   }
 );
 
@@ -73,7 +84,8 @@ packagesRouter.post(
     // 2. Validation
     const parsed = createPackageSchema.safeParse(req.body);
     if (!parsed.success) {
-      return sendProblem(res, 422, "validation-error", "Invalid package data", req.originalUrl);
+      return sendProblem(res, 422, "validation-error", "Invalid package data", req.originalUrl,
+        invalidParams(parsed.error.issues));
     }
 
     // 3. Work
@@ -81,6 +93,7 @@ packagesRouter.post(
       const row = await createPackage(parsed.data);
       // 4. Representation + 5. Response
       res.setHeader("Location", `/v1/packages/${row.id}`);
+      res.setHeader("ETag", etagFor(row));
       return res.status(201).json(toPackageResponse(row));
     } catch (error) {
       req.log.error({ err: error }, "Error creating package");
@@ -114,6 +127,7 @@ packagesRouter.patch(
             "validation-error",
             "Invalid package id",
             req.originalUrl,
+            invalidParams(parsed.error.issues),
           ),
         );
     }
@@ -134,6 +148,17 @@ packagesRouter.patch(
 
     // 3. Work
     try {
+      const current = await findPackageById(parsed.data.packageId);
+      if (!current) {
+        return res
+          .status(404)
+          .json(
+            problem(404, "not-found", "Package not found", req.originalUrl),
+          );
+      }
+      // Conditional write (A.8): refuse stale preconditions with 412.
+      if (checkPrecondition(req, res, etagFor(current))) return;
+
       const row = await updatePackage(parsed.data.packageId, {
         name: packageName,
         price: packagePrice,
@@ -147,6 +172,7 @@ packagesRouter.patch(
       }
 
       // 4. Representation + 5. Response
+      res.setHeader("ETag", etagFor(row));
       return res.status(200).json(toPackageResponse(row));
     } catch (error) {
       req.log.error({ err: error }, "Error updating package");
@@ -180,11 +206,20 @@ packagesRouter.delete(
             "validation-error",
             "Invalid package id",
             req.originalUrl,
+            invalidParams(parsed.error.issues),
           ),
         );
     }
 
-    // 3. Work
+    // 3. Work (conditional write, A.8)
+    const current = await findPackageById(parsed.data.packageId);
+    if (!current) {
+      return res
+        .status(404)
+        .json(problem(404, "not-found", "Package not found", req.originalUrl));
+    }
+    if (checkPrecondition(req, res, etagFor(current))) return;
+
     const row = await deletePackage(parsed.data.packageId);
     if (!row) {
       return res

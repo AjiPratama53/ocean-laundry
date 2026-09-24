@@ -24,6 +24,13 @@ import {
 } from "../store/orders.js";
 import { toOrderResponse } from "../representations/orders.js";
 import { problem } from "../problem.js";
+import {
+  checkPrecondition,
+  etagFor,
+  invalidParams,
+  orderVersion,
+  sendConditional,
+} from "../middleware/http-cache.js";
 import { findKey, saveKey } from "../store/idempotency.js";
 import { z } from "zod";
 import { findPackageById } from "../store/packages.js";
@@ -48,7 +55,8 @@ ordersRouter.get(
       return res
         .status(400)
         .json(
-          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+          problem(400, "validation-error", "Invalid order id", req.originalUrl,
+            invalidParams(parsed.error.issues)),
         );
     }
 
@@ -60,8 +68,10 @@ ordersRouter.get(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
-    // 4. Representation + 5. Response
-    return res.status(200).json(toOrderResponse(row));
+    // 4. Representation + 5. Response (conditional read, A.7)
+    const body = toOrderResponse(row);
+    sendConditional(req, res, body, orderVersion(row));
+    return;
   }
 );
 
@@ -81,6 +91,7 @@ ordersRouter.get(
             "validation-error",
             "Invalid query parameters",
             req.originalUrl,
+            invalidParams(parsed.error.issues),
           ),
         );
     }
@@ -88,8 +99,10 @@ ordersRouter.get(
     // 3. Work
     const rows = await findOrdersForPrincipal(req.principal!, parsed.data);
 
-    // 4. Representation + 5. Response
-    return res.status(200).json(rows.map(toOrderResponse));
+    // 4. Representation + 5. Response (conditional read, A.7)
+    const body = rows.map(toOrderResponse);
+    sendConditional(req, res, body, etagFor(body));
+    return;
   }
 );
 
@@ -109,6 +122,7 @@ ordersRouter.post(
             "validation-error",
             "Invalid request body",
             req.originalUrl,
+            invalidParams(parsed.error.issues),
           ),
         );
     }
@@ -216,6 +230,7 @@ ordersRouter.post(
       });
 
       res.setHeader("Location", `/v1/orders/${newOrder.id}`);
+      res.setHeader("ETag", orderVersion(newOrder));
 
       // 5. Response
       return res.status(201).json(responseBody);
@@ -254,6 +269,9 @@ ordersRouter.post(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
+    // Conditional write (A.8): refuse stale preconditions with 412.
+    if (checkPrecondition(req, res, orderVersion(order))) return;
+
     if (order.status !== "placed") {
       return res
         .status(409)
@@ -273,6 +291,7 @@ ordersRouter.post(
           ),
         );
     }
+    res.set("ETag", orderVersion(updated));
     return res.status(200).json(toOrderResponse(updated));
   },
 );
@@ -297,6 +316,9 @@ ordersRouter.post(
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
+
+    // Conditional write (A.8): refuse stale preconditions with 412.
+    if (checkPrecondition(req, res, orderVersion(order))) return;
 
     if (order.status !== "picked_up") {
       return res
@@ -345,6 +367,7 @@ ordersRouter.post(
       weighGrams: weight,
       totalAmount: totalAmount,
     });
+    if (updated) res.set("ETag", orderVersion(updated));
     return res.status(200).json(toOrderResponse(updated));
   },
 );
@@ -370,6 +393,9 @@ ordersRouter.post(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
+    // Conditional write (A.8): refuse stale preconditions with 412.
+    if (checkPrecondition(req, res, orderVersion(order))) return;
+
     if (order.status !== "awaiting_payment") {
       return res
         .status(409)
@@ -384,6 +410,7 @@ ordersRouter.post(
     }
 
     const updated = await updateOrderStatus(order.id, "washing");
+    if (updated) res.set("ETag", orderVersion(updated));
     return res.status(200).json(toOrderResponse(updated));
   },
 );
@@ -409,6 +436,9 @@ ordersRouter.post(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
+    // Conditional write (A.8): refuse stale preconditions with 412.
+    if (checkPrecondition(req, res, orderVersion(order))) return;
+
     if (order.status !== "washing") {
       return res
         .status(409)
@@ -423,6 +453,7 @@ ordersRouter.post(
     }
 
     const updated = await updateOrderStatus(order.id, "ready");
+    if (updated) res.set("ETag", orderVersion(updated));
     return res.status(200).json(toOrderResponse(updated));
   },
 );
@@ -448,6 +479,9 @@ ordersRouter.post(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
+    // Conditional write (A.8): refuse stale preconditions with 412.
+    if (checkPrecondition(req, res, orderVersion(order))) return;
+
     if (order.status !== "ready") {
       return res
         .status(409)
@@ -462,6 +496,7 @@ ordersRouter.post(
     }
 
     const updated = await updateOrderStatus(order.id, "delivering");
+    if (updated) res.set("ETag", orderVersion(updated));
     return res.status(200).json(toOrderResponse(updated));
   },
 );
@@ -487,6 +522,9 @@ ordersRouter.post(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
+    // Conditional write (A.8): refuse stale preconditions with 412.
+    if (checkPrecondition(req, res, orderVersion(order))) return;
+
     if (order.status !== "delivering") {
       return res
         .status(409)
@@ -501,6 +539,7 @@ ordersRouter.post(
     }
 
     const updated = await updateOrderStatus(order.id, "completed");
+    if (updated) res.set("ETag", orderVersion(updated));
     return res.status(200).json(toOrderResponse(updated));
   },
 );
@@ -526,6 +565,9 @@ ordersRouter.post(
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
     }
 
+    // Conditional write (A.8): refuse stale preconditions with 412.
+    if (checkPrecondition(req, res, orderVersion(order))) return;
+
     if (order.status !== "placed" && order.status !== "awaiting_payment") {
       return res
         .status(409)
@@ -540,6 +582,7 @@ ordersRouter.post(
     }
 
     const updated = await updateOrderStatus(order.id, "cancelled");
+    if (updated) res.set("ETag", orderVersion(updated));
     return res.status(200).json(toOrderResponse(updated));
   },
 );
