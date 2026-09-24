@@ -15,10 +15,12 @@ import { ordersRouter } from "./routes/orders.js";
 import { packagesRouter } from "./routes/packages.js";
 import { paymentsRouter } from "./routes/payments.js";
 import { authenticate } from "./auth/authenticate.js";
+import { cors } from "./middleware/http-cache.js";
 import { httpLogger, logger } from "./logger.js";
 
 const app = express();
 app.use(httpLogger);
+app.use(cors);
 app.use(express.json());
 app.use(authenticate);
 app.use("/v1", ordersRouter);

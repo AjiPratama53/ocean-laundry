@@ -1,6 +1,10 @@
-# my-app
+# Ocean Laundry — Web Browser Client
 
-Scaffolded with Vuetify CLI.
+Session 5 assignment (Vue 3 + TypeScript + Vuetify + Tailwind).
+Workflow table, session decision, and demo accounts live in the repository
+root `README.md`. App config comes from the environment — see `.env.example`
+(`VITE_API_BASE_URL`, `VITE_OIDC_ISSUER`, `VITE_POLL_INTERVAL_MS`).
+All network calls live in `src/lib/api.ts`; components never call `fetch`.
 
 ## ❗️ Documentation
 
