@@ -11,11 +11,11 @@
             "source": "/v1/(.*)", 
             "destination": { 
                 "service": "service"
-            } 
+            }
         },
-        {
-            "source": "/health",
-            "destination": {
+        { 
+            "source": "/health", 
+            "destination": { 
                 "service": "service"
             }
         }
