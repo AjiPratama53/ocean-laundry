@@ -1,4 +1,5 @@
 import ForbiddenView from "@/views/ForbiddenView.vue";
+import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import OrderDetailView from "@/views/OrderDetailView.vue";
@@ -20,47 +21,47 @@ import {
  * the service and surfaced via 401/403/404 states (A.3/A.9).
  */
 const routes: RouteRecordRaw[] = [
-  { path: "/", name: "home", component: () => import("@/views/Home.vue") },
+  { path: "/", name: "home", component: Home },
   {
-    path: "/signin",
-    name: "signin",
+    path: "/login",
+    name: "login",
     component: Login,
   },
   {
     path: "/packages",
     name: "packages",
     component: PackagesView,
-    meta: { requiresAuth: true },
+    // meta: { requiresAuth: true },
   },
   {
     path: "/orders",
     name: "orders",
     component: OrdersView,
-    meta: { requiresAuth: true },
+    // meta: { requiresAuth: true },
   },
   {
     path: "/orders/new",
     name: "order-new",
     component: OrderNewView,
-    meta: { requiresAuth: true },
+    // meta: { requiresAuth: true },
   },
   {
     path: "/orders/:id",
     name: "order-detail",
     component: OrderDetailView,
-    meta: { requiresAuth: true },
+    // meta: { requiresAuth: true },
   },
   {
     path: "/payments/new",
     name: "payment-new",
     component: PaymentNewView,
-    meta: { requiresAuth: true },
+    // meta: { requiresAuth: true },
   },
   {
     path: "/payments/:id",
     name: "payment-detail",
     component: PaymentDetailView,
-    meta: { requiresAuth: true },
+    // meta: { requiresAuth: true },
   },
   {
     path: "/forbidden",
@@ -86,10 +87,10 @@ router.beforeEach((to) => {
   if (!to.meta.requiresAuth) return true;
   try {
     if (!localStorage.getItem("ocean.session")) {
-      return { path: "/signin", query: { redirect: to.fullPath } };
+      return { path: "/login", query: { redirect: to.fullPath } };
     }
   } catch {
-    return { path: "/signin", query: { redirect: to.fullPath } };
+    return { path: "/login", query: { redirect: to.fullPath } };
   }
   return true;
 });

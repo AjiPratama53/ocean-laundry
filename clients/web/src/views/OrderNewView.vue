@@ -2,13 +2,9 @@
   <v-card class="mx-auto mt-6" max-width="640" title="Buat order">
     <v-card-text>
       <v-text-field v-model="form.customerId" :error-messages="field('customerId')" label="Customer ID" />
-      <v-select
-        v-model="form.packageId"
-        :error-messages="field('packageId')"
-        :items="packageItems"
-        label="Paket"
-      />
-      <v-textarea v-model="form.pickupAddress" auto-grow :error-messages="field('pickupAddress')" label="Alamat jemput" rows="2" />
+      <v-select v-model="form.packageId" :error-messages="field('packageId')" :items="packageItems" label="Paket" />
+      <v-textarea v-model="form.pickupAddress" auto-grow :error-messages="field('pickupAddress')" label="Alamat jemput"
+        rows="2" />
       <v-alert v-if="formLevel" class="mt-2" type="error" variant="tonal" density="compact">{{ formLevel }}</v-alert>
     </v-card-text>
     <v-card-actions>

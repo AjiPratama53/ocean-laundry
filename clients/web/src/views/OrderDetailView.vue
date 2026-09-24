@@ -29,28 +29,37 @@
         <v-card-text>
           <div>Paket: <code>{{ order!.packageId }}</code></div>
           <div>Alamat jemput: {{ order!.pickupAddress }}</div>
-          <div>Berat: {{ order!.weightGrams ?? '—' }} g · Total: {{ order!.totalAmount != null ? `Rp ${order!.totalAmount.toLocaleString('id-ID')}` : '—' }}</div>
+          <div>Berat: {{ order!.weightGrams ?? '—' }} g · Total: {{ order!.totalAmount != null ? `Rp
+            ${order!.totalAmount.toLocaleString('id-ID')}` : '—' }}</div>
           <div class="text-caption mt-1">ETag versi ini: <code>{{ etag ?? '(none)' }}</code></div>
         </v-card-text>
         <v-card-actions class="flex-wrap">
           <!-- Buttons reflect role as UX only; the service refuses what is not allowed. -->
-          <v-btn v-if="can('deliveries:write')" :loading="busy === 'pickup'" variant="outlined" @click="act('pickup')">Pickup</v-btn>
-          <v-btn v-if="can('orders:fulfil')" color="primary" :loading="busy === 'wash'" variant="outlined" @click="act('wash')">Wash</v-btn>
-          <v-btn v-if="can('orders:fulfil')" :loading="busy === 'ready'" variant="outlined" @click="act('ready')">Ready</v-btn>
-          <v-btn v-if="can('deliveries:write')" :loading="busy === 'delivery'" variant="outlined" @click="act('delivery')">Delivery</v-btn>
-          <v-btn v-if="can('deliveries:write')" :loading="busy === 'complete'" variant="outlined" @click="act('complete')">Complete</v-btn>
-          <v-btn v-if="can('orders:write')" color="error" :loading="busy === 'cancel'" variant="text" @click="act('cancel')">Cancel</v-btn>
+          <v-btn v-if="can('deliveries:write')" :loading="busy === 'pickup'" variant="outlined"
+            @click="act('pickup')">Pickup</v-btn>
+          <v-btn v-if="can('orders:fulfil')" color="primary" :loading="busy === 'wash'" variant="outlined"
+            @click="act('wash')">Wash</v-btn>
+          <v-btn v-if="can('orders:fulfil')" :loading="busy === 'ready'" variant="outlined"
+            @click="act('ready')">Ready</v-btn>
+          <v-btn v-if="can('deliveries:write')" :loading="busy === 'delivery'" variant="outlined"
+            @click="act('delivery')">Delivery</v-btn>
+          <v-btn v-if="can('deliveries:write')" :loading="busy === 'complete'" variant="outlined"
+            @click="act('complete')">Complete</v-btn>
+          <v-btn v-if="can('orders:write')" color="error" :loading="busy === 'cancel'" variant="text"
+            @click="act('cancel')">Cancel</v-btn>
           <v-btn v-if="can('payments:write')" :to="`/payments/new?orderId=${order!.id}`" variant="text">Pay</v-btn>
         </v-card-actions>
       </v-card>
 
       <v-card v-if="can('orders:fulfil')" class="mt-4" title="Timbang (staff)" variant="outlined">
         <v-card-text>
-          <v-text-field v-model.number="weight" :error-messages="weighError ? [weighError] : []" label="Berat (gram)" type="number" />
+          <v-text-field v-model.number="weight" :error-messages="weighError ? [weighError] : []" label="Berat (gram)"
+            type="number" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="primary" :disabled="!weight" :loading="busy === 'weigh'" variant="flat" @click="act('weigh')">Simpan timbangan</v-btn>
+          <v-btn color="primary" :disabled="!weight" :loading="busy === 'weigh'" variant="flat"
+            @click="act('weigh')">Simpan timbangan</v-btn>
         </v-card-actions>
       </v-card>
     </div>

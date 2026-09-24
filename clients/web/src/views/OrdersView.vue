@@ -3,28 +3,16 @@
     <div class="d-flex align-center mb-4 flex-wrap gap-2">
       <h1 class="text-h5 font-weight-bold">Orders</h1>
       <v-spacer />
-      <v-select
-        v-model="status"
-        clearable
-        density="compact"
-        :items="statuses"
-        label="Status"
-        style="max-width: 220px"
-        @update:model-value="onFilter"
-      />
+      <v-select v-model="status" clearable density="compact" :items="statuses" label="Status" style="max-width: 220px"
+        @update:model-value="onFilter" />
       <v-btn icon="mdi-refresh" variant="text" @click="refresh(true)" />
       <v-btn color="primary" to="/orders/new" variant="flat">New order</v-btn>
     </div>
 
     <ViewStateShell :state="shell" :empty-text="emptyText" show-freshness>
       <v-list lines="two">
-        <v-list-item
-          v-for="o in orders"
-          :key="o.id"
-          :subtitle="`${o.status} · ${o.pickupAddress}`"
-          :title="o.id"
-          :to="`/orders/${o.id}`"
-        >
+        <v-list-item v-for="o in orders" :key="o.id" :subtitle="`${o.status} · ${o.pickupAddress}`" :title="o.id"
+          :to="`/orders/${o.id}`">
           <template #append><v-chip size="small">{{ o.status }}</v-chip></template>
         </v-list-item>
       </v-list>

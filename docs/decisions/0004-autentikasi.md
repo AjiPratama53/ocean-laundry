@@ -13,7 +13,7 @@ Layanan Ocean Laundry memerlukan mekanisme autentikasi dan otorisasi (access con
 | Keputusan              | Pilihan                                        | Alasan & Pertimbangan                                                                                              |
 | ---------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Authorisation server   | Keycloak (Docker / Self-hosted)                | Mendukung OpenID Connect standard serta refresh token rotation dengan reuse detection (Step 10)                    |
-| Strategi token testing | Test-only signing key lokal (in-process JWKS)  | Menjamin pipeline CI mandiri, cepat, stabil, dan tidak bergantung pada ketersediaan jaringan ke Keycloak eksternal |
+| Strategi token testing | Test-only loging key lokal (in-process JWKS)   | Menjamin pipeline CI mandiri, cepat, stabil, dan tidak bergantung pada ketersediaan jaringan ke Keycloak eksternal |
 | Domain actors          | customer, courier, staff, order-expiration-job | Diturunkan dari proses bisnis Ocean Laundry pada openapi.yaml                                                      |
 
 ### 2. Klasifikasi Klien (Step 1)

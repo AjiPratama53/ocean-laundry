@@ -13,7 +13,8 @@
             <v-card-text>{{ p.description }}</v-card-text>
             <v-card-actions v-if="canWrite">
               <v-btn size="small" variant="text" @click="startEdit(p)">Ubah</v-btn>
-              <v-btn size="small" color="error" variant="text" :loading="deleting === p.id" @click="remove(p)">Hapus</v-btn>
+              <v-btn size="small" color="error" variant="text" :loading="deleting === p.id"
+                @click="remove(p)">Hapus</v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -24,7 +25,8 @@
       <v-card-text>
         <v-text-field v-model="form.packageName" :error-messages="field('packageName')" label="Nama paket" />
         <v-text-field v-model="form.packageDesc" :error-messages="field('packageDesc')" label="Deskripsi" />
-        <v-text-field v-model.number="form.packagePrice" :error-messages="field('packagePrice')" label="Harga (Rp)" type="number" />
+        <v-text-field v-model.number="form.packagePrice" :error-messages="field('packagePrice')" label="Harga (Rp)"
+          type="number" />
         <v-alert v-if="formLevel" class="mt-2" type="error" variant="tonal" density="compact">{{ formLevel }}</v-alert>
         <v-alert v-if="conflict" class="mt-2" type="warning" variant="tonal" density="compact">
           Paket ini baru saja diubah orang lain — data terbaru sudah dimuat. Periksa lagi lalu simpan ulang.
@@ -33,7 +35,8 @@
       <v-card-actions>
         <v-btn v-if="editing" variant="text" @click="cancelEdit">Batal</v-btn>
         <v-spacer />
-        <v-btn color="primary" :loading="saving" variant="flat" @click="save">{{ editing ? 'Simpan' : 'Tambah' }}</v-btn>
+        <v-btn color="primary" :loading="saving" variant="flat" @click="save">{{ editing ? 'Simpan' : 'Tambah'
+        }}</v-btn>
       </v-card-actions>
     </v-card>
     <v-alert v-else-if="forbiddenNote" class="mt-6" type="warning" variant="tonal">
@@ -90,7 +93,7 @@ async function load(background: boolean) {
   catch (e) {
     if (e instanceof ApiError && e.status === 401) return // api layer redirects
     if (e instanceof ApiError && e.status === 403) {
-      // A.3.2 — domain terms, never "sign in again".
+      // A.3.2 — domain terms, never "login again".
       shell.value = {
         kind: 'error',
         problem: { ...e.problem, detail: 'Akun ini tidak memiliki akses katalog (butuh izin packages:read).' },

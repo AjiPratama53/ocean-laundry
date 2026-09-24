@@ -1,5 +1,5 @@
 <template>
-    <v-card class="mx-auto mt-10" max-width="480" title="Sign in">
+    <v-card class="mx-auto mt-10" max-width="480" title="Login">
         <v-card-text>
             <v-text-field v-model="username" autocomplete="username" :error-messages="usernameErrors"
                 label="Nama pengguna" @update:model-value="clearServerError" />
@@ -15,7 +15,7 @@
         <v-card-actions>
             <v-spacer />
             <!-- Disabled while in flight (A.6.3). -->
-            <v-btn color="primary" :disabled="busy" :loading="busy" variant="flat" @click="submit">Sign in</v-btn>
+            <v-btn color="primary" :disabled="busy" :loading="busy" variant="flat" @click="submit">Login</v-btn>
         </v-card-actions>
     </v-card>
 </template>
@@ -52,7 +52,7 @@ async function submit() {
 
     busy.value = true
     try {
-        await session.signInWithPassword(username.value, password.value, String(route.query.redirect ?? '/'))
+        await session.loginWithPassword(username.value, password.value, String(route.query.redirect ?? '/'))
     }
     catch (e) {
         if (e instanceof AuthError && e.code === 'invalid_grant') {

@@ -24,7 +24,8 @@
   <!-- content (+ stale marker when background refresh fails) -->
   <div v-else>
     <v-alert v-if="state.stale" class="mb-3" type="warning" variant="tonal" density="compact">
-      Showing data as of {{ formatTime(state.fetchedAt) }}. Reconnecting… {{ state.staleNote ?? 'last refresh failed.' }}
+      Showing data as of {{ formatTime(state.fetchedAt) }}. Reconnecting… {{ state.staleNote ?? 'last refresh failed.'
+      }}
     </v-alert>
     <div v-else-if="showFreshness" class="text-caption text-medium-emphasis mb-2">
       Updated {{ formatTime(state.fetchedAt) }}
@@ -44,7 +45,7 @@ defineProps<{
 
 function errorTitle(status: number): string {
   // A.3.2 — 401/403/404 are three different situations, never treated alike.
-  if (status === 401) return 'Your session expired — please sign in again.'
+  if (status === 401) return 'Your session expired — please login again.'
   if (status === 403) return 'This account is not allowed to do that.'
   if (status === 404) return 'Not found.'
   if (status === 0) return 'Cannot reach the service.'

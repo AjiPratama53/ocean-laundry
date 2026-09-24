@@ -10,7 +10,7 @@ let privateKey: Awaited<ReturnType<typeof generateKeyPair>>["privateKey"];
 let jwk: Record<string, unknown>;
 
 /**
- * Starts a local HTTP server exposing a JWKS with a test-only signing key,
+ * Starts a local HTTP server exposing a JWKS with a test-only loging key,
  * so the test suite can issue tokens the service will accept without any
  * network dependency on the real Keycloak instance. Idempotent — safe to
  * call multiple times.
@@ -24,14 +24,21 @@ export async function startTestAuthServer(): Promise<{
 
   const { publicKey, privateKey: pk } = await generateKeyPair("RS256");
   privateKey = pk;
-  jwk = { ...(await exportJWK(publicKey)), kid: "test-key", alg: "RS256", use: "sig" };
+  jwk = {
+    ...(await exportJWK(publicKey)),
+    kid: "test-key",
+    alg: "RS256",
+    use: "sig",
+  };
 
   jwksServer = createServer((_req, res) => {
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ keys: [jwk] }));
   });
 
-  await new Promise<void>((resolve) => jwksServer!.listen(0, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) =>
+    jwksServer!.listen(0, "127.0.0.1", resolve),
+  );
 
   const address = jwksServer.address();
   if (!address || typeof address === "string") {
@@ -58,8 +65,12 @@ export interface TokenOptions {
   kind?: "user" | "service";
 }
 
-export async function tokenFor(subject: string, opts: TokenOptions): Promise<string> {
-  if (!privateKey) throw new Error("startTestAuthServer() must run before tokenFor()");
+export async function tokenFor(
+  subject: string,
+  opts: TokenOptions,
+): Promise<string> {
+  if (!privateKey)
+    throw new Error("startTestAuthServer() must run before tokenFor()");
   const azp = opts.kind === "service" ? subject : "test-cli";
   return new SignJWT({ scope: opts.scopes.join(" "), azp })
     .setProtectedHeader({ alg: "RS256", kid: "test-key" })

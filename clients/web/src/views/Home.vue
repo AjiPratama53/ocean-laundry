@@ -7,9 +7,9 @@
     </p>
 
     <v-alert v-if="!session.isSignedIn" type="info" variant="tonal" class="mb-6">
-      Sign in with your access token to start a workflow. Protected pages send you
+      Login with your access token to start a workflow. Protected pages send you
       to sign-in automatically — never a blank screen.
-      <v-btn class="ml-3" color="primary" to="/signin" variant="flat" size="small">Sign in</v-btn>
+      <v-btn class="ml-3" color="primary" to="/login" variant="flat" size="small">Login</v-btn>
     </v-alert>
 
     <div class="grid md:grid-cols-2 gap-4">

@@ -13,9 +13,9 @@
           <v-btn to="/orders" variant="text">Orders</v-btn>
           <v-btn v-if="canOrder" to="/orders/new" variant="text">New order</v-btn>
           <v-chip class="mx-2" size="small" variant="outlined">{{ session.primaryRole }}</v-chip>
-          <v-btn variant="outlined" @click="session.signOut()">Sign out</v-btn>
+          <v-btn variant="outlined" @click="session.signOut()">Log out</v-btn>
         </template>
-        <v-btn v-else to="/signin" color="primary" variant="flat">Sign in</v-btn>
+        <v-btn v-else to="/login" color="primary" variant="flat">Login</v-btn>
       </template>
     </v-app-bar>
 
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useSessionStore } from '@/stores/session'
+import PackagesView from './views/PackagesView.vue'
 
 const session = useSessionStore()
 onMounted(() => session.load())
