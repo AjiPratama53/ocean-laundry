@@ -640,6 +640,13 @@ export function getPaymentConditional(id: string, etag?: string | null) {
   });
 }
 
+
+export const proceedPayment = (id: string, etag?: string | null) =>
+  call<Payment>(`/payments/${encodeURIComponent(id)}/proceed`, { method: "POST", withPrecondition: true, etag: etag ?? undefined });
+export const cancelPayment = (id: string, etag?: string | null) =>
+  call<Payment>(`/payments/${encodeURIComponent(id)}/cancel`, { method: "POST", withPrecondition: true, etag: etag ?? undefined });
+
+
 /* ------------------------------------------------------------------ */
 /* Console-attack surface (A.9): expose the bearer token like the      */
 /* KANTIN reference does, so the grader can replay a forbidden op.     */
