@@ -1,6 +1,7 @@
 import { pool } from "../app.js";
 import type { CreateOrderInput } from "../schemas/orders.js";
 import { randomUUID } from "crypto";
+import type { Principal } from "../auth/principal.js";
 
 export interface OrderRow {
   id: string;
@@ -21,6 +22,7 @@ export interface OrderRow {
   weight_grams: number | null;
   total_amount: number | null;
   created_at: Date;
+  updated_at: Date | null;
 }
 
 export async function findOrderById(id: string): Promise<OrderRow | null> {
@@ -46,6 +48,57 @@ export async function findOrders(params: {
   if (params.cursor) {
     values.push(params.cursor);
     conditions.push(`id > $${values.length}`); // simple cursor: id-based
+  }
+
+  values.push(params.limit);
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const { rows } = await pool.query<OrderRow>(
+    `SELECT * FROM orders ${where} ORDER BY id ASC LIMIT $${values.length}`,
+    values,
+  );
+  return rows;
+}
+
+/**
+ * List orders constrained by the caller's role.
+ * - staff / fulfilment / service accounts: all orders
+ * - courier: orders assigned to them
+ * - customer: orders they placed
+ */
+export async function findOrdersForPrincipal(
+  p: Principal,
+  params: {
+    status?: string;
+    limit: number;
+    cursor?: string;
+  },
+): Promise<OrderRow[]> {
+  const conditions: string[] = [];
+  const values: unknown[] = [];
+
+  // Role-based filtering applied inside the query, not after it.
+  const canSeeAll =
+    p.scopes.includes("orders:fulfil") ||
+    (p.kind === "service" && p.scopes.includes("orders:read"));
+
+  if (!canSeeAll) {
+    if (p.scopes.includes("deliveries:write")) {
+      values.push(p.subject);
+      conditions.push(`courier_id = $${values.length}`);
+    } else {
+      values.push(p.subject);
+      conditions.push(`customer_id = $${values.length}`);
+    }
+  }
+
+  if (params.status) {
+    values.push(params.status);
+    conditions.push(`status = $${values.length}`);
+  }
+  if (params.cursor) {
+    values.push(params.cursor);
+    conditions.push(`id > $${values.length}`);
   }
 
   values.push(params.limit);
@@ -88,7 +141,8 @@ export async function updateOrderStatus(
    SET 
     status = $1, 
     weight_grams = COALESCE($2, weight_grams), 
-    total_amount = COALESCE($3, total_amount) 
+    total_amount = COALESCE($3, total_amount),
+    updated_at = now()
   WHERE id = $4 
   RETURNING *`,
     [newStatus, extra?.weighGrams ?? null, extra?.totalAmount ?? null, id],

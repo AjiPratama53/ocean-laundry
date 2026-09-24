@@ -1,5 +1,12 @@
 import { Router, type Request, type Response } from "express";
 import { createHash } from "crypto";
+import { requireScope } from "../auth/require-scope.js";
+import {
+  mayReadOrder,
+  mayWriteOrder,
+  mayFulfilOrder,
+  mayDeliverOrder,
+} from "../auth/ownership.js";
 import {
   orderIdParamSchema,
   getOrdersQuerySchema,
@@ -8,7 +15,7 @@ import {
 import {
   createOrder,
   findOrderById,
-  findOrders,
+  findOrdersForPrincipal,
   packageExists,
   updateOrderStatus,
 } from "../store/orders.js";
@@ -27,160 +34,208 @@ function hashBody(body: unknown): string {
 const isUuid = (s: string) => z.string().uuid().safeParse(s).success;
 
 // GET /v1/orders/{orderId}
-ordersRouter.get("/orders/:orderId", async (req, res) => {
-  // 2. Validation
-  const parsed = orderIdParamSchema.safeParse(req.params);
-  if (!parsed.success) {
-    return res
-      .status(400)
-      .json(
-        problem(400, "validation-error", "Invalid order id", req.originalUrl),
-      );
-  }
+ordersRouter.get(
+  "/orders/:orderId", 
+  requireScope("orders:read"),
+  async (req, res) => {
+    
+    // 2. Validation
+    const parsed = orderIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
+    }
 
-  // 3. Work
-  const row = await findOrderById(parsed.data.orderId);
-  if (!row) {
-    return res
-      .status(404)
-      .json(problem(404, "not-found", "Order not found", req.originalUrl));
-  }
+    // 3. Work
+    const row = await findOrderById(parsed.data.orderId);
+    if (!row || !mayReadOrder(req.principal!, row)) {
+      return res
+        .status(404)
+        .json(problem(404, "not-found", "Order not found", req.originalUrl));
+    }
 
-  // 4. Representation + 5. Response
-  return res.status(200).json(toOrderResponse(row));
-});
+    // 4. Representation + 5. Response
+    return res.status(200).json(toOrderResponse(row));
+  }
+);
 
 // GET /v1/orders
-ordersRouter.get("/orders", async (req, res) => {
-  // 2. Validation
-  const parsed = getOrdersQuerySchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res
-      .status(400)
-      .json(
-        problem(
-          400,
-          "validation-error",
-          "Invalid query parameters",
-          req.originalUrl,
-        ),
-      );
-  }
-
-  // 3. Work
-  const rows = await findOrders(parsed.data);
-
-  // 4. Representation + 5. Response
-  return res.status(200).json(rows.map(toOrderResponse));
-});
-
-// POST /v1/orders
-ordersRouter.post("/orders", async (req, res) => {
-  // 2. Validation
-  const parsed = createOrderSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res
-      .status(400)
-      .json(
-        problem(
-          400,
-          "validation-error",
-          "Invalid request body",
-          req.originalUrl,
-        ),
-      );
-  }
-
-  const idempotencyKey = req.header("Idempotency-Key");
-
-  // Idempotency-Key missing / malformed
-  if (!idempotencyKey || !isUuid(idempotencyKey)) {
-    return res
-      .status(400)
-      .json(
-        problem(
-          400,
-          "validation-error",
-          "Invalid or missing Idempotency-Key",
-          req.originalUrl,
-        ),
-      );
-  }
-
-  const bodyHash = hashBody(parsed.data);
-
-  const existingKey = await findKey(idempotencyKey);
-  if (existingKey) {
-    // Key sama tetapi request body berbeda
-    if (existingKey.bodyHash !== bodyHash) {
+ordersRouter.get(
+  "/orders", 
+  requireScope("orders:read"),
+  async (req, res) => {
+    // 2. Validation
+    const parsed = getOrdersQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
       return res
-        .status(409)
+        .status(400)
         .json(
           problem(
-            409,
-            "idempotency-key-reuse",
-            "Idempotency-Key was already used with a different request body",
+            400,
+            "validation-error",
+            "Invalid query parameters",
             req.originalUrl,
           ),
         );
     }
 
-    // Key dan request body sama
-    // Kembalikan response sebelumnya
-    return res
-      .status(existingKey.responseStatus)
-      .json(existingKey.responseBody);
-  }
-
-  if (!(await packageExists(parsed.data.packageId))) {
-    return res
-      .status(422)
-      .json(
-        problem(
-          422,
-          "validation-error",
-          "packageId does not reference an existing package",
-          req.originalUrl,
-        ),
-      );
-  }
-
-  try {
     // 3. Work
-    const newOrder = await createOrder(parsed.data);
+    const rows = await findOrdersForPrincipal(req.principal!, parsed.data);
 
-    // 4. Representation
-    const responseBody = toOrderResponse(newOrder);
-
-    await saveKey({
-      key: idempotencyKey,
-      bodyHash,
-      responseStatus: 201,
-      responseBody,
-    });
-
-    res.setHeader("Location", `/v1/orders/${newOrder.id}`);
-
-    // 5. Response
-    return res.status(201).json(responseBody);
-  } catch (error) {
-    console.error("Error creating order:", error);
-    return res
-      .status(500)
-      .json(
-        problem(
-          500,
-          "internal-server-error",
-          "Failed to create order",
-          req.originalUrl,
-        ),
-      );
+    // 4. Representation + 5. Response
+    return res.status(200).json(rows.map(toOrderResponse));
   }
-});
+);
+
+// POST /v1/orders
+ordersRouter.post(
+  "/orders",
+  requireScope("orders:write"), 
+  async (req, res) => {
+    // 2. Validation
+    const parsed = createOrderSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "Invalid request body",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    const idempotencyKey = req.header("Idempotency-Key");
+
+    // Only end-users may create orders; service accounts (e.g. the expiration job)
+    // may only cancel existing orders.
+    if (req.principal!.kind !== "user") {
+      return res
+        .status(403)
+        .json(
+          problem(
+            403,
+            "insufficient-scope",
+            "Only authenticated users may create orders",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    // The order must be placed on behalf of the authenticated principal.
+    if (parsed.data.customerId !== req.principal!.subject) {
+      return res
+        .status(400)
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "customerId does not match the authenticated user",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    // Idempotency-Key missing / malformed
+    if (!idempotencyKey || !isUuid(idempotencyKey)) {
+      return res
+        .status(400)
+        .json(
+          problem(
+            400,
+            "validation-error",
+            "Invalid or missing Idempotency-Key",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    const orderInput = {
+      ...parsed.data,
+      customerId: req.principal!.subject,
+    };
+
+    const bodyHash = hashBody(req.body);
+
+    const existingKey = await findKey(idempotencyKey);
+    if (existingKey) {
+      // Key sama tetapi request body berbeda
+      if (existingKey.bodyHash !== bodyHash) {
+        return res
+          .status(409)
+          .json(
+            problem(
+              409,
+              "idempotency-key-reuse",
+              "Idempotency-Key was already used with a different request body",
+              req.originalUrl,
+            ),
+          );
+      }
+
+      // Key dan request body sama
+      // Kembalikan response sebelumnya
+      return res
+        .status(existingKey.responseStatus)
+        .json(existingKey.responseBody);
+    }
+
+    if (!(await packageExists(parsed.data.packageId))) {
+      return res
+        .status(422)
+        .json(
+          problem(
+            422,
+            "validation-error",
+            "packageId does not reference an existing package",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    try {
+      // 3. Work
+      const newOrder = await createOrder(orderInput);
+
+      // 4. Representation
+      const responseBody = toOrderResponse(newOrder);
+
+      await saveKey({
+        key: idempotencyKey,
+        bodyHash,
+        responseStatus: 201,
+        responseBody,
+      });
+
+      res.setHeader("Location", `/v1/orders/${newOrder.id}`);
+
+      // 5. Response
+      return res.status(201).json(responseBody);
+    } catch (error) {
+      req.log.error({ err: error }, "Error creating order");
+      return res
+        .status(500)
+        .json(
+          problem(
+            500,
+            "internal-server-error",
+            "Failed to create order",
+            req.originalUrl,
+          ),
+        );
+    }
+  }
+);
 
 // POST /v1/orders/{orderId}/pickup
 ordersRouter.post(
   "/orders/:orderId/pickup",
+  requireScope("deliveries:write"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
@@ -192,7 +247,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayDeliverOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -219,6 +274,7 @@ ordersRouter.post(
 // POST /v1/orders/{orderId}/weigh
 ordersRouter.post(
   "/orders/:orderId/weigh",
+  requireScope("orders:fulfil"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
@@ -230,7 +286,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayFulfilOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -290,6 +346,7 @@ ordersRouter.post(
 // POST	/v1/orders/{orderId}/wash
 ordersRouter.post(
   "/orders/:orderId/wash",
+  requireScope("orders:fulfil"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
@@ -301,7 +358,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayFulfilOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -328,6 +385,7 @@ ordersRouter.post(
 // POST	/v1/orders/{orderId}/ready
 ordersRouter.post(
   "/orders/:orderId/ready",
+  requireScope("orders:fulfil"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
@@ -339,7 +397,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayFulfilOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -366,6 +424,7 @@ ordersRouter.post(
 // POST	/v1/orders/{orderId}/delivery
 ordersRouter.post(
   "/orders/:orderId/delivery",
+  requireScope("deliveries:write"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
@@ -377,7 +436,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayDeliverOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -404,6 +463,7 @@ ordersRouter.post(
 // POST	/v1/orders/{orderId}/complete
 ordersRouter.post(
   "/orders/:orderId/complete",
+  requireScope("deliveries:write"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
@@ -415,7 +475,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayDeliverOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));
@@ -442,6 +502,7 @@ ordersRouter.post(
 // POST	/v1/orders/{orderId}/cancel
 ordersRouter.post(
   "/orders/:orderId/cancel",
+  requireScope("orders:write"),
   async (req: Request, res: Response) => {
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
@@ -453,7 +514,7 @@ ordersRouter.post(
     }
 
     const order = await findOrderById(parsed.data.orderId);
-    if (!order) {
+    if (!order || !mayWriteOrder(req.principal!, order)) {
       return res
         .status(404)
         .json(problem(404, "not-found", "Order not found", req.originalUrl));

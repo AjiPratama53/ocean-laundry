@@ -1,4 +1,5 @@
 import { pool } from "../app.js";
+import type { OrderRow } from "./orders.js";
 
 export interface PaymentRow {
   id: string;
@@ -14,6 +15,28 @@ export async function findPaymentById(id: string): Promise<PaymentRow | null> {
     [id],
   );
   return rows[0] ?? null;
+}
+
+export interface PaymentWithOrderRow extends PaymentRow {
+  order: OrderRow;
+}
+
+export async function findPaymentWithOrderById(
+  id: string,
+): Promise<PaymentWithOrderRow | null> {
+  const { rows } = await pool.query<PaymentWithOrderRow>(
+    `SELECT 
+       p.*,
+       to_jsonb(o.*) as "order"
+     FROM payments p
+     JOIN orders o ON o.id = p.order_id
+     WHERE p.id = $1`,
+    [id],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  // pg returns the JSONB column as a plain object; cast it back to OrderRow shape.
+  return { ...row, order: row.order as unknown as OrderRow };
 }
 
 export async function createPayment(data: {
@@ -39,4 +62,12 @@ export async function orderExists(orderId: string): Promise<boolean> {
     orderId,
   ]);
   return rows.length > 0;
+}
+
+export async function findOrderById(orderId: string): Promise<OrderRow | null> {
+  const { rows } = await pool.query<OrderRow>(
+    `SELECT * FROM orders WHERE id = $1`,
+    [orderId],
+  );
+  return rows[0] ?? null;
 }
