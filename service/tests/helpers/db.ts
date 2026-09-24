@@ -37,7 +37,7 @@ export async function seedPayment(
   const id = `pay_${randomUUID()}`;
   const { rows } = await pool.query(
     `INSERT INTO payments (id, order_id, amount, status) VALUES ($1,$2,$3,$4) RETURNING *`,
-    [id, overrides.orderId, overrides.amount ?? 10000, overrides.status ?? "paid"],
+    [id, overrides.orderId, overrides.amount ?? 10000, overrides.status ?? "pending"],
   );
   return rows[0];
 }
