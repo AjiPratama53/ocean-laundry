@@ -3,27 +3,28 @@
 ## Context
 
 Layanan Ocean Laundry memerlukan mekanisme autentikasi dan otorisasi (access control) yang memisahkan secara tegas tiga lapis pengecekan akses:
+
 1. **Layer 1 (Authentication):** Memvalidasi JWT access token (tanda tangan via JWKS, masa berlaku `exp`, penerbit `iss`, dan audiens `aud`), kemudian menyusun objek `req.principal`. Jika token tidak ada atau tidak valid, request ditolak dengan `401 Unauthorized` sebelum menyentuh basis data.
 2. **Layer 2 (Scope Authorization):** Memastikan token pemanggil membawa scope yang dipersyaratkan oleh operasi OpenAPI. Jika scope tidak sesuai, request ditolak dengan `403 Forbidden` (`insufficient_scope`) sebelum objek dimuat dari database.
 3. **Layer 3 (Object Ownership):** Memeriksa hubungan kepemilikan antara objek database dan pemanggil di dalam handler. Jika objek tidak ada atau bukan milik pemanggil, keduanya menghasilkan respon `404 Not Found` yang identik agar tidak membocorkan keberadaan data (anti-enumeration).
 
 ### 1. Keputusan Server Otorisasi dan Konfigurasi
 
-| Keputusan | Pilihan | Alasan & Pertimbangan |
-|---|---|---|
-| Authorisation server | Keycloak (Docker / Self-hosted) | Mendukung OpenID Connect standard serta refresh token rotation dengan reuse detection (Step 10) |
-| Strategi token testing | Test-only signing key lokal (in-process JWKS) | Menjamin pipeline CI mandiri, cepat, stabil, dan tidak bergantung pada ketersediaan jaringan ke Keycloak eksternal |
-| Domain actors | customer, courier, staff, order-expiration-job | Diturunkan dari proses bisnis Ocean Laundry pada openapi.yaml |
+| Keputusan              | Pilihan                                        | Alasan & Pertimbangan                                                                                              |
+| ---------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Authorisation server   | Keycloak (Docker / Self-hosted)                | Mendukung OpenID Connect standard serta refresh token rotation dengan reuse detection (Step 10)                    |
+| Strategi token testing | Test-only signing key lokal (in-process JWKS)  | Menjamin pipeline CI mandiri, cepat, stabil, dan tidak bergantung pada ketersediaan jaringan ke Keycloak eksternal |
+| Domain actors          | customer, courier, staff, order-expiration-job | Diturunkan dari proses bisnis Ocean Laundry pada openapi.yaml                                                      |
 
 ### 2. Klasifikasi Klien (Step 1)
 
 Setiap aplikasi diklasifikasikan berdasarkan kemampuannya menyimpan rahasia:
 
-| Our client | Runs on | Public / Confidential | Flow | Holds a secret? |
-|---|---|---|---|---|
-| Mobile Client (Customer & Courier) | Perangkat pribadi pengguna (smartphone) | Public | Authorization Code + PKCE | Tidak |
-| Web Client (Staff Outlet) | Browser pengguna | Public | Authorization Code + PKCE | Tidak |
-| Scheduled Job (Order Expiration Job) | Server tim / backend background worker | Confidential | Client Credentials | Ya, di secret manager |
+| Our client                           | Runs on                                 | Public / Confidential | Flow                      | Holds a secret?       |
+| ------------------------------------ | --------------------------------------- | --------------------- | ------------------------- | --------------------- |
+| Mobile Client (Customer & Courier)   | Perangkat pribadi pengguna (smartphone) | Public                | Authorization Code + PKCE | Tidak                 |
+| Web Client (Staff Outlet)            | Browser pengguna                        | Public                | Authorization Code + PKCE | Tidak                 |
+| Scheduled Job (Order Expiration Job) | Server tim / backend background worker  | Confidential          | Client Credentials        | Ya, di secret manager |
 
 Klien publik (Mobile & Web) dilarang menyimpan client secret dan wajib menggunakan flow Authorization Code dengan S256 PKCE code challenge. Token tidak pernah diletakkan pada URL/query parameter dan disimpan di memori atau HttpOnly secure cookie.
 
@@ -31,18 +32,19 @@ Klien publik (Mobile & Web) dilarang menyimpan client secret dan wajib menggunak
 
 Scope dirancang berdasarkan kapabilitas aktor domain (bukan 1:1 per endpoint):
 
-| Scope | Mengizinkan | Customer | Courier | Staff | Job |
-|---|---|---|---|---|---|
-| `packages:read` | Melihat daftar paket layanan laundry | Ya | - | Ya | - |
-| `packages:write` | Menambah, mengubah, dan menghapus paket laundry | - | - | Ya | - |
-| `orders:read` | Membaca detail dan daftar pesanan | Ya | Ya | Ya | Ya |
-| `orders:write` | Membuat pesanan baru dan membatalkan pesanan | Ya | - | - | Ya |
-| `orders:fulfil` | Operasi laundry di outlet (timbang, cuci, siap diambil) | - | - | Ya | - |
-| `deliveries:write` | Penjemputan dan pengantaran pesanan oleh kurir | - | Ya | - | - |
-| `payments:read` | Membaca catatan pembayaran pesanan | Ya | - | Ya | - |
-| `payments:write` | Melakukan pembayaran pesanan | Ya | - | - | - |
+| Scope              | Mengizinkan                                             | Customer | Courier | Staff | Job |
+| ------------------ | ------------------------------------------------------- | -------- | ------- | ----- | --- |
+| `packages:read`    | Melihat daftar paket layanan laundry                    | Ya       | -       | Ya    | -   |
+| `packages:write`   | Menambah, mengubah, dan menghapus paket laundry         | -        | -       | Ya    | -   |
+| `orders:read`      | Membaca detail dan daftar pesanan                       | Ya       | Ya      | Ya    | Ya  |
+| `orders:write`     | Membuat pesanan baru dan membatalkan pesanan            | Ya       | -       | -     | Ya  |
+| `orders:fulfil`    | Operasi laundry di outlet (timbang, cuci, siap diambil) | -        | -       | Ya    | -   |
+| `deliveries:write` | Penjemputan dan pengantaran pesanan oleh kurir          | -        | Ya      | -     | -   |
+| `payments:read`    | Membaca catatan pembayaran pesanan                      | Ya       | -       | Ya    | -   |
+| `payments:write`   | Melakukan pembayaran pesanan, Membatalkan pembayaran    | Ya       | -       | Ya    | Ya  |
 
 Pemetaan operasi OpenAPI ke scope:
+
 - `getPackages` → `packages:read`
 - `createPackage`, `updatePackage`, `deletePackage` → `packages:write`
 - `getOrders`, `getOrder` → `orders:read`
@@ -54,7 +56,8 @@ Pemetaan operasi OpenAPI ke scope:
 
 ### 4. Strategi Token untuk Automated Tests (Step 11a)
 
-Automated test suite menggunakan strategi *local test key*:
+Automated test suite menggunakan strategi _local test key_:
+
 - Test suite men-generate pasangan kunci RS256 secara in-memory saat pengujian dimulai.
 - Mini HTTP server lokal menyajikan public key dalam format JWKS (`http://127.0.0.1:<port>/jwks.json`).
 - `OIDC_ISSUER`, `OIDC_AUDIENCE`, dan `OIDC_JWKS_URI` diarahkan ke server in-process ini selama test berjalan.
@@ -63,10 +66,12 @@ Automated test suite menggunakan strategi *local test key*:
 ### 5. Bukti Refresh Token Rotation & Reuse Detection (Step 10)
 
 Pengaturan diaktifkan pada Keycloak:
+
 - **Revoke Refresh Token:** ON
 - **Refresh Token Max Reuse:** 0
 
 Bukti eksekusi rotasi dan deteksi reuse:
+
 1. **Pertukaran refresh token RT1 menghasilkan RT2 yang baru:**
    ```bash
    RT2=$(curl -s -X POST "$ISSUER/protocol/openid-connect/token" \

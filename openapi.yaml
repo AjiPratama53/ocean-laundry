@@ -484,6 +484,56 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /payments/{paymentId}/proceed:
+    post:
+      summary: Proceed Payment
+      operationId: proceedPayment
+      security:
+        - oauth2: [payments:write]
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+      description: Customer melakukan pembayaran.
+      responses:
+        "200":
+          description: Payment Proceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /payments/{paymentId}/cancel:
+    post:
+      summary: Cancel Payment
+      operationId: cancelPayment
+      security:
+        - oauth2: [payments:write]
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+      description: Pembayaran dibatalkan.
+      responses:
+        "200":
+          description: Payment Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "401": 
+          $ref: "#/components/responses/Unauthorized"
+        "403": 
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
 components:
   securitySchemes:
     oauth2:
@@ -541,6 +591,13 @@ components:
 
     OrderId:
       name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    PaymentId:
+      name: paymentId
       in: path
       required: true
       schema:
