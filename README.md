@@ -8,10 +8,10 @@ Sistem pemesanan laundry berbasis platform
 
 | Peran             | Nama                                        | Tanggung Jawab                                     |
 | ----------------- | ------------------------------------------- | -------------------------------------------------- |
-| Contract owner    | Dhimas Early Oceandy (24/533508/PA/22584)   | Meninjau setiap perubahan openapi.yaml             |
-| Service owner     | Muhammad Dzaky Ar Rasyid(24/543165/PA/23067)| Deploy, konfigurasi, migrasi, health endpoint      |
-| Client owner      | Pratama Nanindra Aji (24/533677/PA/22604)   | Klien pengguna, pelaporan ambiguitas kontrak       |
-| Integration owner | Anders Emmanuel Tan (24/541351/PA/22964)    | Mock server, contract test, koordinasi Pertemuan 7 |
+| Contract owner    | Anders Emmanuel Tan (24/541351/PA/22964)   | Meninjau setiap perubahan openapi.yaml             |
+| Service owner     | Dhimas Early Oceandy (24/533508/PA/22584) | Deploy, konfigurasi, migrasi, health endpoint      |
+| Client owner      | Muhammad Dzaky Ar Rasyid (24/543165/PA/23067)  | Klien pengguna, pelaporan ambiguitas kontrak       |
+| Integration owner | Pratama Nanindra Aji (24/533677/PA/22604) | Mock server, contract test, koordinasi Pertemuan 7 |
 
 ## Planned Clients & Constraints
 
@@ -33,9 +33,9 @@ Sistem pemesanan laundry berbasis platform
   input harga tetap perlu dilindungi dari pengiriman ganda jika staff menekan tombol simpan
   berulang kali.
 
-  ## Workflow Table
+## Workflow Table
 
-  Work flows:
+Workflows yang diimplementasikan pada aplikasi web:
 
 | Workflow | Screen | Role Permitted | Operation in openapi.yaml |
 |---|---|---|---|
@@ -43,18 +43,20 @@ Sistem pemesanan laundry berbasis platform
 | | Adds package description | staff | POST /packages |
 | | Packages list | staff | GET /packages |
 | Staff updates a package | Packages list | staff | GET /packages |
-| | Edits package details | staff | PUT /packages/{id} |
+| | Get a specific package | staff | GET /packages/{packageId} |
+| | Updates package | staff | PATCH /packages/{packageId} |
 | | Packages list | staff | GET /packages |
 | Customer creates an order | Packages list | customer | GET /packages |
-| | Package details | customer | GET /packages/{id} |
+| | Package details | customer | GET /packages/{packageId} |
 | | Create order form | customer | POST /orders |
-| Courier delivers the order to staff | Orders list | courier | GET /orders |
-| | Order details | courier | PUT /orders/{id}/pickup |
-| Staff processes the order | Order details | staff | PUT /orders/{id}/weigh |
-| | Order details | staff | PUT /orders/{id}/start-wash |
-| | Order details | staff | PUT /orders/{id}/ready |
-| Staff process the payment for an order | Orders list | staff | GET /orders/{id} |
-| | Payment form | staff | POST /payments |
-| | Payment details | staff | PUT /payments/{id}/status |
-| Courier delivers the order to customer | Order details | courier | PUT /orders/{id}/start-delivery |
-| | Order details | courier | PUT /orders/{id}/complete-delivery |
+
+## Catatan Penyimpanan Sesi (A.3 butir 5)
+
+Sesi otentikasi (JWT Access Token dan Refresh Token) disimpan pada `localStorage` peramban web (`ocean.session`). Keputusan ini diambil agar sesi tetap persisten ketika pengguna membuka tab baru, menyalin URL *deep-link*, atau melakukan *page reload*.
+
+Konsekuensi keamanannya: token yang berada di `localStorage` dapat dibaca oleh skrip JavaScript apa pun yang dieksekusi pada *origin* yang sama (rentan terhadap serangan *Cross-Site Scripting* / XSS). Untuk memitigasi risiko tersebut, masa berlaku token dibatasi (*short-lived access token*), mekanisme *silent refresh* digunakan untuk memperbarui token secara otomatis, dan setiap operasi pada *service* backend diverifikasi secara otoritatif menggunakan *scope* dan *ownership check*.
+
+## Akun Pengujian Presentasi (Session 7 Demonstration)
+
+1. **Staff Outlet**: Memiliki hak akses/scopes `packages:read`, `packages:write`, `orders:read`, `orders:fulfil`.
+2. **Customer**: Memiliki hak akses/scopes `packages:read`, `orders:read`, `orders:write`, `payments:write`.
