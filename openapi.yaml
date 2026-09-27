@@ -543,9 +543,9 @@ components:
         Public clients use Authorization Code + PKCE with no client secret.
       flows:
         authorizationCode:
-          authorizationUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/auth
-          tokenUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/token
-          refreshUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/token
+          authorizationUrl: http://localhost:8090/realms/ocean-laundry/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8090/realms/ocean-laundry/protocol/openid-connect/token
+          refreshUrl: http://localhost:8090/realms/ocean-laundry/protocol/openid-connect/token
           scopes:
             packages:read: Melihat daftar package
             packages:write: Membuat, mengubah, menghapus package
@@ -560,7 +560,7 @@ components:
       type: oauth2
       flows:
         clientCredentials:
-          tokenUrl: http://localhost:8080/realms/ocean-laundry/protocol/openid-connect/token
+          tokenUrl: http://localhost:8090/realms/ocean-laundry/protocol/openid-connect/token
           scopes:
             orders:read: Membaca order untuk mencari yang kedaluwarsa (automated job)
             orders:write: Membatalkan order yang kedaluwarsa (automated job)
