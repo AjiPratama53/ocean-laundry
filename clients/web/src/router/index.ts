@@ -1,6 +1,6 @@
 import ForbiddenView from "@/views/ForbiddenView.vue";
 import Home from "@/views/Home.vue";
-import Login from "@/views/Login.vue";
+import Login from "@/views/auth/Login.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import OrderDetailView from "@/views/OrderDetailView.vue";
 import OrderNewView from "@/views/OrderNewView.vue";
@@ -31,37 +31,37 @@ const routes: RouteRecordRaw[] = [
     path: "/packages",
     name: "packages",
     component: PackagesView,
-    // meta: { requiresAuth: true },
+    meta: { requiresAuth: true },
   },
   {
     path: "/orders",
     name: "orders",
     component: OrdersView,
-    // meta: { requiresAuth: true },
+    meta: { requiresAuth: true },
   },
   {
     path: "/orders/new",
     name: "order-new",
     component: OrderNewView,
-    // meta: { requiresAuth: true },
+    meta: { requiresAuth: true },
   },
   {
     path: "/orders/:id",
     name: "order-detail",
     component: OrderDetailView,
-    // meta: { requiresAuth: true },
+    meta: { requiresAuth: true },
   },
   {
     path: "/payments/new",
     name: "payment-new",
     component: PaymentNewView,
-    // meta: { requiresAuth: true },
+    meta: { requiresAuth: true },
   },
   {
     path: "/payments/:id",
     name: "payment-detail",
     component: PaymentDetailView,
-    // meta: { requiresAuth: true },
+    meta: { requiresAuth: true },
   },
   {
     path: "/forbidden",
