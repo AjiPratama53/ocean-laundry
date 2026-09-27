@@ -1,7 +1,7 @@
 FROM quay.io/keycloak/keycloak:26.0 as builder
 
 # Salin file realm ke folder import internal
-COPY keycloak/ocean-laundry-realm.json /opt/keycloak/data/import/ocean-laundry-realm.json
+COPY infra/keycloak/ocean-laundry-realm.json /opt/keycloak/data/import/ocean-laundry-realm.json
 
 # Jalankan build agar konfigurasi tersimpan di image
 RUN /opt/keycloak/bin/kc.sh build
