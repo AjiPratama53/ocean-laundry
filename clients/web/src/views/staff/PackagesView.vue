@@ -38,27 +38,35 @@
                     </div>
                     <div class="flex items-center">
                         <p class="font-light">
-                            <span class="font-bold text-xl">Rp {{ formatPrice(servicePackage.price) }}</span>/kg
+                            <span class="font-bold text-xl">Rp {{ formatBalance(servicePackage.price) }}</span>/kg
                         </p>
-                        <v-btn icon="mdi-pencil-outline" variant="text" />
+                        <v-btn icon="mdi-pencil-outline" variant="text" @click="openPackageDialog('edit')" />
                     </div>
                 </div>
             </div>
             <div class="flex justify-end">
-                <v-btn class="bg-cyan-700 text-cyan-50" prepend-icon="mdi-plus" text="Tambah Paket baru" />
+                <v-btn class="bg-cyan-700 text-cyan-50" prepend-icon="mdi-plus" text="Tambah Paket baru"
+                    @click="openPackageDialog('new')" />
             </div>
         </v-card>
     </div>
-    <package-dialog type="edit" />
+    <package-dialog v-model="isPackageDialogOpen" :type="packageDialogType" />
 </template>
 
 <script setup lang="ts">
 import PackageDialog from '@/components/staff/PackageDialog.vue';
+import formatBalance from '@/lib/formatPrice';
 import { usePackageStore } from '@/stores/packageStore';
-
-const formatPrice = (price: number) => new Intl.NumberFormat('id-ID').format(price);
+import { ref } from 'vue';
 
 const packages = usePackageStore();
+const isPackageDialogOpen = ref(false);
+const packageDialogType = ref<'new' | 'edit'>('new');
+
+function openPackageDialog(type: 'new' | 'edit') {
+    packageDialogType.value = type;
+    isPackageDialogOpen.value = true;
+}
 
 </script>
 

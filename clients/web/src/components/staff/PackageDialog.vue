@@ -1,8 +1,8 @@
 <template>
-    <v-dialog max-width="80%">
-        <template v-slot:activator="{ props: activatorProps }">
+    <v-dialog v-model="isOpen" max-width="80%">
+        <!-- <template v-slot:activator="{ props: activatorProps }">
             <v-btn v-bind="activatorProps" color="surface-variant" text="Open Dialog" variant="flat"></v-btn>
-        </template>
+        </template> -->
 
         <template v-slot:default="{ isActive }">
             <v-card>
@@ -62,6 +62,7 @@ dsb..." variant="solo" clearable hide-details />
 defineProps<{
     type: 'new' | 'edit'
 }>()
+const isOpen = defineModel<boolean>({ default: false })
 </script>
 
 <style scoped></style>
