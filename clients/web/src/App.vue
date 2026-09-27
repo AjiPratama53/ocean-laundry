@@ -8,7 +8,8 @@
           <!-- <router-view /> -->
           <!-- <catalogue-view /> -->
           <!-- <order-new-view /> -->
-          <order-detail-view />
+          <!-- <order-detail-view /> -->
+          <payment />
           <!-- <packages-view /> -->
         </v-col>
       </v-container>
@@ -25,6 +26,7 @@ import CatalogueView from './views/customer/CatalogueView.vue'
 import PackagesView from './views/staff/PackagesView.vue'
 import OrderNewView from './views/customer/OrderNewView.vue'
 import OrderDetailView from './views/customer/OrderDetailView.vue'
+import Payment from './views/customer/Payment.vue'
 
 const session = useSessionStore()
 onMounted(() => session.load())

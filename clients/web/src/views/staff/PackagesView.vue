@@ -32,7 +32,7 @@
             <div class="flex justify-between" v-for="(servicePackage) in packages.getPackages" :key="servicePackage.id">
                 <div>
                     <h2 class="font-bold">{{ servicePackage.name }}</h2>
-                    <p>{{ servicePackage.description }}</p>
+                    <p class="font-light">{{ servicePackage.description }}</p>
                 </div>
                 <div class="flex items-center">
                     <p class="font-light">
