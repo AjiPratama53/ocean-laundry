@@ -35,10 +35,15 @@ export const usePackageStore = defineStore("packages", function () {
     packages.value = newPackages;
   }
 
+  function getPackageById(id: string) {
+    return packages.value.find((pkg) => pkg.id === id);
+  }
+
   return {
     getPackages,
     getPackagesNumber,
     isEmpty,
+    getPackageById,
     setPackages,
   };
 });
