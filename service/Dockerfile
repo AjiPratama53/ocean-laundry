@@ -6,16 +6,16 @@
 # ---------- build stage: compile TypeScript ----------
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY service/package.json package-lock.json ./
+COPY service/package.json service/package-lock.json ./
 RUN npm ci
-COPY . .
+COPY service/ ./
 RUN npm run build
 
 # ---------- runtime stage ----------
 FROM node:22-alpine
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
-COPY service/package.json package-lock.json ./
+COPY service/package.json service/package-lock.json ./
 RUN npm ci --omit=dev
 COPY --chown=node:node --from=build /app/dist ./dist
 EXPOSE 3000
