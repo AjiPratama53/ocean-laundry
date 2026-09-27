@@ -1,5 +1,5 @@
 <template>
-    <div class="flex justify-between gap-32">
+    <div class="flex justify-between items-center gap-32">
         <div class="flex flex-col gap-1">
             <p class="text-cyan-700">
                 <span>
