@@ -6,7 +6,7 @@
 # ---------- build stage: compile TypeScript ----------
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY service/package.json package-lock.json ./
+COPY service/package.json service/package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
