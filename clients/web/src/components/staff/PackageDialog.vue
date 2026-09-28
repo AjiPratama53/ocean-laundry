@@ -16,7 +16,7 @@
                         <p>{{ type === 'new' ?
                             'Lengkapi data paket untuk menambah katalog operasional POS' :
                             'Ubah data paket'
-                            }}</p>
+                        }}</p>
                     </div>
                 </div>
                 <div class="flex flex-col p-8 gap-6">
@@ -46,8 +46,8 @@ dsb..." variant="solo" clearable hide-details />
                         <div class="flex gap-4">
                             <v-btn text="Batal" @click="isActive.value = false" variant="text" />
                             <v-btn prepend-icon="mdi-check" class="bg-cyan-700 text-cyan-50"
-                                :text="type === 'new' ? 'Tambah Paket' : 'Simpan Perubahan'"
-                                @click="isActive.value = false"></v-btn>
+                                :text="type === 'new' ? 'Tambah Paket' : 'Simpan Perubahan'" :loading="isPostingPackage"
+                                @click="handleNewPackage().then(() => { isActive.value = false })"></v-btn>
                         </div>
                         <!-- <v-btn v-if="type === 'edit'" class="bg-red-300 text-red-800"
                             prepend-icon="mdi-trash-can-outline" text="Hapus Paket" @click="isActive.value = false" /> -->
@@ -61,12 +61,30 @@ dsb..." variant="solo" clearable hide-details />
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import DeleteDialog from './DeleteDialog.vue';
 
 defineProps<{
     type: 'new' | 'edit'
 }>()
+
 const isOpen = defineModel<boolean>({ default: false })
+const isPostingPackage = ref(false);
+
+async function handleNewPackage() {
+    isPostingPackage.value = true;
+
+    try {
+        // Post/patch package here
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    } catch (error) {
+
+    } finally {
+        isPostingPackage.value = false;
+    }
+}
+
 </script>
 
 <style scoped></style>

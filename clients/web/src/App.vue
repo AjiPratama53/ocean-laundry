@@ -23,7 +23,7 @@
       <v-container class="py-8">
         <v-col class="flex flex-col gap-8">
           <!-- Customer -->
-          <catalogue-view />
+          <!-- <catalogue-view /> -->
           <!-- <order-new-view /> -->
           <!-- <order-detail-view /> -->
           <!-- <payment /> -->
@@ -31,7 +31,7 @@
           <!-- Staff -->
           <!-- <packages-view /> -->
 
-          <!-- <login /> -->
+          <login />
           <!-- <forbidden-view /> -->
           <!-- <not-found-view /> -->
         </v-col>

@@ -17,8 +17,9 @@
 
                     <v-btn-group>
 
-                        <v-btn text="Hapus" @click="action(); isActive.value = false" class="bg-red-300 text-red-800" />
-                        <v-btn text="Batal" @click="isActive.value = false" />
+                        <v-btn text="Hapus" :loading="isLoading" :disabled="isLoading" @click="handleAction(isActive)"
+                            class="bg-red-300 text-red-800" />
+                        <v-btn text="Batal" :disabled="isLoading" @click="isActive.value = false" />
                     </v-btn-group>
                 </v-card-actions>
             </v-card>
@@ -27,7 +28,9 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
+import { ref } from 'vue'
+
+const props = defineProps({
     action: {
         type: Function,
         required: true
@@ -42,4 +45,16 @@ defineProps({
         default: 'tonal'
     }
 })
+
+const isLoading = ref(false)
+
+async function handleAction(isActive: { value: boolean }) {
+    isLoading.value = true
+    try {
+        await props.action()
+        isActive.value = false
+    } finally {
+        isLoading.value = false
+    }
+}
 </script>

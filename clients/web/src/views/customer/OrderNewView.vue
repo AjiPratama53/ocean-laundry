@@ -86,7 +86,7 @@
             <v-btn class="bg-cyan-700 text-cyan-50" block
                 :prepend-icon="viewState?.kind === 'content' ? 'mdi-lock-outline' : ''" size="x-large"
                 :text="viewState?.kind === 'content' ? 'Konfirmasi & Buat Pesanan' : ''"
-                :disabled="viewState?.kind !== 'content'" />
+                :disabled="viewState?.kind !== 'content'" :loading="isPostingOrder" @click="handleNewOrder" />
             <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
                 <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
                 <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
@@ -102,7 +102,7 @@ import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';
 import { usePackageStore } from '@/stores/packageStore';
-import { type Ref, ref, onMounted } from 'vue';
+import { type Ref, ref, onMounted, watch } from 'vue';
 
 interface OrderStep {
     step: string,
@@ -148,9 +148,36 @@ const addresses: Address[] = [
     }
 ]
 
-const viewState: Ref<ViewState<Package> | null> = ref(null);
+const selectedAddress: Ref<Address | null> = ref(null);
 
-onMounted(() => viewState.value = { kind: 'loading' })
+const viewState: Ref<ViewState<Package> | null> = ref(null);
+const isPostingOrder = ref(false);
+
+async function handleNewOrder() {
+    isPostingOrder.value = true;
+
+    try {
+        // Post new order here
+        await setTimeout(() => {
+            isPostingOrder.value = false;
+        }, 3000);
+    } catch (error) {
+
+    } finally {
+    }
+}
+
+onMounted(() => {
+    viewState.value = { kind: 'loading' };
+    try {
+        // Fetch data here
+        setTimeout(() => {
+            viewState.value = { kind: 'content', }
+        }, 3000);
+    } catch (error) {
+        viewState.value = { kind: 'error' }
+    }
+})
 </script>
 
 <style scoped></style>

@@ -62,7 +62,7 @@
                     <v-row class="flex justify-between items-center">
                         <p>Cuci Komplit ({{ (order.weightGrams ?? 0) / 1000 }} x Rp {{
                             formatBalance(selectedPackage.price)
-                            }})
+                        }})
                         </p>
                         <p>Rp {{ formatBalance(order.totalAmount) }}</p>
                     </v-row>
@@ -170,7 +170,16 @@ const paymentStatusKey = {
 
 const viewState: Ref<ViewState<Package> | null> = ref(null);
 
-onMounted(() => viewState.value = { kind: 'loading' })
-</script>
+onMounted(() => {
+    viewState.value = { kind: 'loading' };
+    try {
+        // Fetch data here
+        setTimeout(() => {
+            viewState.value = { kind: 'content', }
+        }, 3000);
+    } catch (error) {
+        viewState.value = { kind: 'error' }
+    }
+})</script>
 
 <style scoped></style>

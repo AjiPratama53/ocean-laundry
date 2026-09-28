@@ -91,8 +91,17 @@ const packages = usePackageStore();
 const search = ref('');
 const viewState: Ref<ViewState<Package> | null> = ref(null);
 
-onMounted(() => viewState.value = { kind: 'loading' })
-
+onMounted(() => {
+    viewState.value = { kind: 'loading' };
+    try {
+        // Fetch data here
+        setTimeout(() => {
+            viewState.value = { kind: 'content', }
+        }, 3000);
+    } catch (error) {
+        viewState.value = { kind: 'error' }
+    }
+})
 </script>
 
 <style scoped></style>

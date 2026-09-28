@@ -88,7 +88,8 @@
         <v-col class="flex flex-col items-center gap-2">
             <v-btn class="bg-cyan-700 text-cyan-50" block
                 :prepend-icon="viewState?.kind === 'content' ? 'mdi-lock-outline' : ''" size="x-large"
-                :text="viewState?.kind === 'content' ? 'Bayar' : ''" :disabled="viewState?.kind !== 'content'" />
+                :text="viewState?.kind === 'content' ? 'Bayar' : ''" :disabled="viewState?.kind !== 'content'"
+                :loading="isPostingPayment" @click="handleNewPayment" />
             <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
                 <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
                 <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
@@ -105,7 +106,7 @@ import OrderEmpty from '@/components/customer/OrderEmpty.vue';
 import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';
-import { type Ref, ref, onMounted } from 'vue';
+import { type Ref, ref, onMounted, watch } from 'vue';
 
 interface OrderStep {
     step: string,
@@ -135,9 +136,34 @@ const paymentMethods: {
     ]
 
 const viewState: Ref<ViewState<Package> | null> = ref(null);
+const isPostingPayment = ref(false);
 
-onMounted(() => viewState.value = { kind: 'loading' })
+async function handleNewPayment() {
+    isPostingPayment.value = true;
 
+    try {
+        // Post new order here
+        await setTimeout(() => {
+            isPostingPayment.value = false;
+        }, 3000);
+    } catch (error) {
+
+    } finally {
+    }
+}
+
+
+onMounted(() => {
+    viewState.value = { kind: 'loading' };
+    try {
+        // Fetch data here
+        setTimeout(() => {
+            viewState.value = { kind: 'content', }
+        }, 3000);
+    } catch (error) {
+        viewState.value = { kind: 'error' }
+    }
+})
 </script>
 
 <style scoped></style>
