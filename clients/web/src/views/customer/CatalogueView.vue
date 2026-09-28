@@ -44,11 +44,14 @@
     <v-card class="p-4 flex gap-8 items-center justify-between">
         <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="50em" />
         <v-text-field v-else prepend-inner-icon="mdi-magnify" placeholder="Cari paket..." variant="outlined" clearable
-            single-line hide-details />
+            single-line hide-details v-model.lazy.trim="search" />
         <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="15em" />
         <p v-else>Menampilkan <span class="font-bold">{{ packages.getPackagesNumber }}</span> paket</p>
     </v-card>
-    <div class="grid grid-cols-3 gap-6">
+
+    <catalogue-empty v-if="viewState?.kind === 'empty'" :search />
+    <customer-error v-else-if="viewState?.kind === 'error'" />
+    <div v-else class="grid grid-cols-3 gap-6">
         <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="n in 3" type="heading, paragraph, button"
             class="p-6" />
         <v-card v-else class="p-6 border-t-8 border-blue-400" v-for="servicePackage in packages.getPackages"
@@ -76,6 +79,8 @@
 </template>
 
 <script setup lang="ts">
+import CatalogueEmpty from '@/components/CatalogueEmpty.vue';
+import CustomerError from '@/components/customer/CustomerError.vue';
 import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';
@@ -83,6 +88,7 @@ import { usePackageStore } from '@/stores/packageStore';
 import { onMounted, ref, type Ref } from 'vue';
 
 const packages = usePackageStore();
+const search = ref('');
 const viewState: Ref<ViewState<Package> | null> = ref(null);
 
 onMounted(() => viewState.value = { kind: 'loading' })

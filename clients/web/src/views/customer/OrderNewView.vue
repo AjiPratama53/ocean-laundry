@@ -1,96 +1,103 @@
 <template>
-    <v-card class="p-4 flex gap-4 justify-between">
-        <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="step in steps" width="16rem"
-            type="avatar, heading" />
-        <div v-else v-for="(step, index) in steps" :key="index"
-            :class="[colors[step.status], 'flex', 'items-center', 'gap-4']">
-            <v-icon v-if="step.status === 'done'" icon="mdi-check" />
-            <p v-else class="text-4xl">{{ index + 1 }}</p>
-            <div>
-                <p class="text-sm">Langkah {{ index + 1 }} <span v-if="step.status === 'in-process'">(aktif)</span></p>
-                <h2 class="text-2xl">{{ step.step }}</h2>
-            </div>
-        </div>
-    </v-card>
-    <v-card class="p-6">
-        <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, image" />
-        <v-col v-else>
-            <v-row class="flex items-center justify-between">
-                <p>PAKET YANG DIPILIH</p>
-                <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Paket" class="text-cyan-700" />
-            </v-row>
-            <v-row class="bg-blue-100 p-4 flex items-center justify-between rounded-xl">
-                <v-col>
-                    <h3 class="font-medium text-2xl">{{ selectedPackage?.name }}</h3>
-                    <p>{{ selectedPackage?.description }}</p>
-                </v-col>
-                <v-col class="flex flex-col items-end">
-                    <h4 class="font-medium text-2xl text-cyan-700">Rp {{ formatBalance(selectedPackage?.price) }}</h4>
-                    <p>/kg</p>
-                </v-col>
-            </v-row>
-        </v-col>
-    </v-card>
-    <v-card class="p-6">
-        <v-col>
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="30rem" />
-            <v-row v-else class="flex items-center justify-between">
-                <div class="flex gap-2">
-                    <v-icon icon="mdi-map-marker-outline" />
-                    <h3 class="font-bold text-xl">Alamat Penjemputan & Pengantaran</h3>
-                </div>
-                <v-btn variant="text" prepend-icon="mdi-plus-circle-outline" text="Tambah Alamat Baru"
-                    class="text-cyan-700" />
-            </v-row>
-            <v-row class="flex gap-4">
-                <v-card v-if="viewState?.kind === 'loading'" v-for="item in 2">
-                    <v-skeleton-loader type="heading, paragraph, text" width="30rem" />
-                </v-card>
+    <customer-error v-if="viewState?.kind === 'error'" />
 
-                <v-card v-else class="flex flex-col p-4 gap-4" v-for="(address, index) in addresses" :key="index">
-                    <v-row class="flex justify-between items-center">
-                        <p class="font-bold">{{ address.title }}</p>
-                        <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Alamat"
-                            class="text-cyan-700" />
-                    </v-row>
-                    <v-col class="max-w-2/3">
-                        <p>{{ address.address }}</p>
-                    </v-col>
-                    <v-row class="flex text-gray-500 gap-1">
-                        <v-icon icon="mdi-phone-outline" />
-                        <p>{{ address.phone }}</p>
-                        <v-icon icon="mdi-circle-small" />
-                        <p>{{ address.recipient }}</p>
-                    </v-row>
-                </v-card>
-            </v-row>
-            <v-row v-if="viewState?.kind === 'content'"
-                class="flex justify-between p-4 bg-green-100 rounded-xl text-green-700 items-center">
-                <v-row class="flex gap-4 items-center">
-                    <v-icon icon="mdi-atv" size="x-large" />
-                    <div>
-                        <p class="font-bold">Driver Ocean Express</p>
-                        <p class="text-sm">Penjemputan & Pengantaran langsung ke pintu Anda (Min. 3kg)</p>
-                    </div>
+    <template v-else>
+        <v-card class="p-4 flex gap-4 justify-between">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="step in steps" width="16rem"
+                type="avatar, heading" />
+            <div v-else v-for="(step, index) in steps" :key="index"
+                :class="[colors[step.status], 'flex', 'items-center', 'gap-4']">
+                <v-icon v-if="step.status === 'done'" icon="mdi-check" />
+                <p v-else class="text-4xl">{{ index + 1 }}</p>
+                <div>
+                    <p class="text-sm">Langkah {{ index + 1 }} <span v-if="step.status === 'in-process'">(aktif)</span>
+                    </p>
+                    <h2 class="text-2xl">{{ step.step }}</h2>
+                </div>
+            </div>
+        </v-card>
+        <v-card class="p-6">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, image" />
+            <v-col v-else>
+                <v-row class="flex items-center justify-between">
+                    <p>PAKET YANG DIPILIH</p>
+                    <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Paket" class="text-cyan-700" />
                 </v-row>
-                <v-icon icon="mdi-check-decagram-outline" />
-            </v-row>
+                <v-row class="bg-blue-100 p-4 flex items-center justify-between rounded-xl">
+                    <v-col>
+                        <h3 class="font-medium text-2xl">{{ selectedPackage?.name }}</h3>
+                        <p>{{ selectedPackage?.description }}</p>
+                    </v-col>
+                    <v-col class="flex flex-col items-end">
+                        <h4 class="font-medium text-2xl text-cyan-700">Rp {{ formatBalance(selectedPackage?.price) }}
+                        </h4>
+                        <p>/kg</p>
+                    </v-col>
+                </v-row>
+            </v-col>
+        </v-card>
+        <v-card class="p-6">
+            <v-col>
+                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="30rem" />
+                <v-row v-else class="flex items-center justify-between">
+                    <div class="flex gap-2">
+                        <v-icon icon="mdi-map-marker-outline" />
+                        <h3 class="font-bold text-xl">Alamat Penjemputan & Pengantaran</h3>
+                    </div>
+                    <v-btn variant="text" prepend-icon="mdi-plus-circle-outline" text="Tambah Alamat Baru"
+                        class="text-cyan-700" />
+                </v-row>
+                <v-row class="flex gap-4">
+                    <v-card v-if="viewState?.kind === 'loading'" v-for="item in 2">
+                        <v-skeleton-loader type="heading, paragraph, text" width="30rem" />
+                    </v-card>
+
+                    <v-card v-else class="flex flex-col p-4 gap-4" v-for="(address, index) in addresses" :key="index">
+                        <v-row class="flex justify-between items-center">
+                            <p class="font-bold">{{ address.title }}</p>
+                            <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Alamat"
+                                class="text-cyan-700" />
+                        </v-row>
+                        <v-col class="max-w-2/3">
+                            <p>{{ address.address }}</p>
+                        </v-col>
+                        <v-row class="flex text-gray-500 gap-1">
+                            <v-icon icon="mdi-phone-outline" />
+                            <p>{{ address.phone }}</p>
+                            <v-icon icon="mdi-circle-small" />
+                            <p>{{ address.recipient }}</p>
+                        </v-row>
+                    </v-card>
+                </v-row>
+                <v-row v-if="viewState?.kind === 'content'"
+                    class="flex justify-between p-4 bg-green-100 rounded-xl text-green-700 items-center">
+                    <v-row class="flex gap-4 items-center">
+                        <v-icon icon="mdi-atv" size="x-large" />
+                        <div>
+                            <p class="font-bold">Driver Ocean Express</p>
+                            <p class="text-sm">Penjemputan & Pengantaran langsung ke pintu Anda (Min. 3kg)</p>
+                        </div>
+                    </v-row>
+                    <v-icon icon="mdi-check-decagram-outline" />
+                </v-row>
+            </v-col>
+        </v-card>
+        <v-col class="flex flex-col items-center gap-2">
+            <v-btn class="bg-cyan-700 text-cyan-50" block
+                :prepend-icon="viewState?.kind === 'content' ? 'mdi-lock-outline' : ''" size="x-large"
+                :text="viewState?.kind === 'content' ? 'Konfirmasi & Buat Pesanan' : ''"
+                :disabled="viewState?.kind !== 'content'" />
+            <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
+                <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
+                <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
+                    Kerusakan</p>
+            </span>
         </v-col>
-    </v-card>
-    <v-col class="flex flex-col items-center gap-2">
-        <v-btn class="bg-cyan-700 text-cyan-50" block
-            :prepend-icon="viewState?.kind === 'content' && 'mdi-lock-outline'" size="x-large"
-            :text="viewState?.kind === 'content' ? 'Konfirmasi & Buat Pesanan' : ''"
-            :disabled="viewState?.kind !== 'content'" />
-        <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
-            <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
-            <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
-                Kerusakan</p>
-        </span>
-    </v-col>
+    </template>
 </template>
 
 <script setup lang="ts">
+import CustomerError from '@/components/customer/CustomerError.vue';
 import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';

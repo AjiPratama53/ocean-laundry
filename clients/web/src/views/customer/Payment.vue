@@ -1,97 +1,107 @@
 <template>
-    <v-card class="p-4 flex gap-4 justify-between">
-        <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="step in steps" width="16rem"
-            type="avatar, heading" />
+    <order-empty v-if="viewState?.kind === 'empty'" />
+    <customer-error v-else-if="viewState?.kind === 'error'" />
+    <template v-else>
 
-        <div v-else v-for="(step, index) in steps" :key="index"
-            :class="[colors[step.status], 'flex', 'items-center', 'gap-4']">
-            <v-icon v-if="step.status === 'done'" icon="mdi-check" />
-            <p v-else class="text-4xl">{{ index + 1 }}</p>
-            <div>
-                <p class="text-sm">Langkah {{ index + 1 }} <span v-if="step.status === 'in-process'">(aktif)</span></p>
-                <h2 class="text-2xl">{{ step.step }}</h2>
-            </div>
-        </div>
-    </v-card>
-    <v-card class="p-6 flex flex-col gap-4">
-        <v-row class="flex justify-between items-center">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="20rem" class=" bg-transparent" />
-            <h2 v-else class="font-bold text-xl">Rincian Pembayaran</h2>
+        <v-card class="p-4 flex gap-4 justify-between">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="step in steps" width="16rem"
+                type="avatar, heading" />
 
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="10rem"
-                class=" bg-transparent" />
-            <div v-else class="flex bg-blue-200 text-cyan-700 px-3 py-1 rounded-2xl">
-                <p>Nota Baru</p>
+            <div v-else v-for="(step, index) in steps" :key="index"
+                :class="[colors[step.status], 'flex', 'items-center', 'gap-4']">
+                <v-icon v-if="step.status === 'done'" icon="mdi-check" />
+                <p v-else class="text-4xl">{{ index + 1 }}</p>
+                <div>
+                    <p class="text-sm">Langkah {{ index + 1 }} <span v-if="step.status === 'in-process'">(aktif)</span>
+                    </p>
+                    <h2 class="text-2xl">{{ step.step }}</h2>
+                </div>
             </div>
-        </v-row>
-        <v-col class="flex flex-col">
-            <v-row class="flex justify-between items-center" v-if="viewState?.kind === 'loading'">
-                <v-skeleton-loader type="paragraph" width="15rem" class=" bg-transparent" />
-                <v-skeleton-loader type="paragraph" width="10rem" class=" bg-transparent" />
+        </v-card>
+        <v-card class="p-6 flex flex-col gap-4">
+            <v-row class="flex justify-between items-center">
+                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="20rem"
+                    class=" bg-transparent" />
+                <h2 v-else class="font-bold text-xl">Rincian Pembayaran</h2>
+
+                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="10rem"
+                    class=" bg-transparent" />
+                <div v-else class="flex bg-blue-200 text-cyan-700 px-3 py-1 rounded-2xl">
+                    <p>Nota Baru</p>
+                </div>
             </v-row>
-            <template v-else>
-                <v-row class="flex justify-between items-center">
-                    <p>Subtotal Laundry (4.8kg x Rp {{ formatBalance(11000) }})</p>
-                    <p>Rp {{ formatBalance(52800) }}</p>
+            <v-col class="flex flex-col">
+                <v-row class="flex justify-between items-center" v-if="viewState?.kind === 'loading'">
+                    <v-skeleton-loader type="paragraph" width="15rem" class=" bg-transparent" />
+                    <v-skeleton-loader type="paragraph" width="10rem" class=" bg-transparent" />
                 </v-row>
-                <v-row class="flex justify-between items-center">
-                    <p>Proteksi Higienis Steril</p>
-                    <p>Rp {{ formatBalance(2000) }}</p>
-                </v-row>
-                <v-row class="flex justify-between items-center">
-                    <p class="text-green-700">Ongkir Antar-Jemput</p>
-                    <p>Rp {{ formatBalance(5000) }}</p>
-                </v-row>
-            </template>
-        </v-col>
-        <v-row class="flex justify-between items-center p-4 bg-blue-100 rounded-xl">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="10rem"
-                class="bg-transparent" />
-            <v-col v-else>
-
-                <p>TOTAL PEMBAYARAN</p>
-                <p class="font-light">Termasuk PPN & Biaya Layanan</p>
+                <template v-else>
+                    <v-row class="flex justify-between items-center">
+                        <p>Subtotal Laundry (4.8kg x Rp {{ formatBalance(11000) }})</p>
+                        <p>Rp {{ formatBalance(52800) }}</p>
+                    </v-row>
+                    <v-row class="flex justify-between items-center">
+                        <p>Proteksi Higienis Steril</p>
+                        <p>Rp {{ formatBalance(2000) }}</p>
+                    </v-row>
+                    <v-row class="flex justify-between items-center">
+                        <p class="text-green-700">Ongkir Antar-Jemput</p>
+                        <p>Rp {{ formatBalance(5000) }}</p>
+                    </v-row>
+                </template>
             </v-col>
-
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="15rem"
-                class="bg-transparent" />
-            <p v-else class="font-bold text-4xl text-cyan-700">Rp {{ formatBalance(54800) }}</p>
-        </v-row>
-    </v-card>
-    <v-card class="p-6 flex flex-col gap-4">
-        <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="15rem" />
-        <h2 v-else class="font-bold text-xl">Metode Pembayaran</h2>
-
-        <div class="flex flex-col gap-2">
-            <div v-for="method in paymentMethods" class="flex justify-between items-center p-4 bg-blue-100 rounded-xl">
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="avatar, sentences" width="20rem"
+            <v-row class="flex justify-between items-center p-4 bg-blue-100 rounded-xl">
+                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="10rem"
                     class="bg-transparent" />
-                <v-row v-else class="items-center">
-                    <v-icon :icon="'mdi-' + method.icon" />
+                <v-col v-else>
 
-                    <v-col>
-                        <p class="font-bold">{{ method.name }}</p>
-                        <p class="font-light">{{ method.desc }}</p>
-                    </v-col>
-                </v-row>
+                    <p>TOTAL PEMBAYARAN</p>
+                    <p class="font-light">Termasuk PPN & Biaya Layanan</p>
+                </v-col>
+
+                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="15rem"
+                    class="bg-transparent" />
+                <p v-else class="font-bold text-4xl text-cyan-700">Rp {{ formatBalance(54800) }}</p>
+            </v-row>
+        </v-card>
+        <v-card class="p-6 flex flex-col gap-4">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="15rem" />
+            <h2 v-else class="font-bold text-xl">Metode Pembayaran</h2>
+
+            <div class="flex flex-col gap-2">
+                <div v-for="method in paymentMethods"
+                    class="flex justify-between items-center p-4 bg-blue-100 rounded-xl">
+                    <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="avatar, sentences" width="20rem"
+                        class="bg-transparent" />
+                    <v-row v-else class="items-center">
+                        <v-icon :icon="'mdi-' + method.icon" />
+
+                        <v-col>
+                            <p class="font-bold">{{ method.name }}</p>
+                            <p class="font-light">{{ method.desc }}</p>
+                        </v-col>
+                    </v-row>
+                </div>
             </div>
-        </div>
 
-    </v-card>
-    <v-col class="flex flex-col items-center gap-2">
-        <v-btn class="bg-cyan-700 text-cyan-50" block
-            :prepend-icon="viewState?.kind === 'content' && 'mdi-lock-outline'" size="x-large"
-            :text="viewState?.kind === 'content' ? 'Bayar' : ''" :disabled="viewState?.kind !== 'content'" />
-        <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
-            <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
-            <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
-                Kerusakan</p>
-        </span>
-    </v-col>
+        </v-card>
+        <v-col class="flex flex-col items-center gap-2">
+            <v-btn class="bg-cyan-700 text-cyan-50" block
+                :prepend-icon="viewState?.kind === 'content' ? 'mdi-lock-outline' : ''" size="x-large"
+                :text="viewState?.kind === 'content' ? 'Bayar' : ''" :disabled="viewState?.kind !== 'content'" />
+            <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
+                <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
+                <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
+                    Kerusakan</p>
+            </span>
+        </v-col>
+    </template>
 
 </template>
 
 <script setup lang="ts">
+import CustomerError from '@/components/customer/CustomerError.vue';
+import OrderEmpty from '@/components/customer/OrderEmpty.vue';
 import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';
