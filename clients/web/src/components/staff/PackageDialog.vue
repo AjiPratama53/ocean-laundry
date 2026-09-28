@@ -49,8 +49,10 @@ dsb..." variant="solo" clearable hide-details />
                                 :text="type === 'new' ? 'Tambah Paket' : 'Simpan Perubahan'"
                                 @click="isActive.value = false"></v-btn>
                         </div>
-                        <v-btn v-if="type === 'edit'" class="bg-red-300 text-red-800"
-                            prepend-icon="mdi-trash-can-outline" text="Hapus Paket" @click="isActive.value = false" />
+                        <!-- <v-btn v-if="type === 'edit'" class="bg-red-300 text-red-800"
+                            prepend-icon="mdi-trash-can-outline" text="Hapus Paket" @click="isActive.value = false" /> -->
+                        <delete-dialog v-if="type === 'edit'" title="Hapus Paket" button-text="Hapus Paket"
+                            :action="() => { isOpen = false }" />
                     </div>
                 </div>
             </v-card>
@@ -59,6 +61,8 @@ dsb..." variant="solo" clearable hide-details />
 </template>
 
 <script setup lang="ts">
+import DeleteDialog from './DeleteDialog.vue';
+
 defineProps<{
     type: 'new' | 'edit'
 }>()
