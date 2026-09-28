@@ -1,45 +1,57 @@
 <template>
     <div class="flex justify-between items-center gap-32">
-        <div class="flex flex-col gap-1">
-            <p class="text-cyan-700">
-                <span>
+        <div class="flex flex-col">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, heading, subtitle" width="30rem"
+                class="bg-transparent" />
+            <template v-else>
+                <span class="text-cyan-700">
                     <v-icon icon="mdi-circle-small" />
+                    KATALOG PERAWATAN PAKAIAN MODERN
                 </span>
-                KATALOG PERAWATAN PAKAIAN MODERN
-            </p>
-            <h1 class="font-bold text-4xl">Katalog Layanan & Paket Ocean Laundry</h1>
-            <p>Temukan paket OceanLaundry yang diinginkan dengan perawatan pakaian higienis, deterjen
-                ramah lingkungan, serta layanan antar-jemput gratis.</p>
+                <h1 class="font-bold text-4xl">Katalog Layanan & Paket Ocean Laundry</h1>
+                <p>Temukan paket OceanLaundry yang diinginkan dengan perawatan pakaian higienis, deterjen
+                    ramah lingkungan, serta layanan antar-jemput gratis.</p>
+            </template>
         </div>
         <v-card class="p-4 flex gap-4">
             <div class="flex items-center gap-2">
-                <div class="bg-blue-50 h-2/3 p-1 flex items-center">
-                    <v-icon class="text-blue-600" icon="mdi-check-decagram-outline" />
-                </div>
-                <div class="flex flex-col">
-                    <p class="font-bold">100% Higienis</p>
-                    <p class="font-light">Standar Medis UV-C</p>
-                </div>
+                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="10em" />
+                <template v-else>
+                    <div class="bg-blue-50 h-2/3 p-1 flex items-center">
+                        <v-icon class="text-blue-600" icon="mdi-check-decagram-outline" />
+                    </div>
+                    <div class="flex flex-col">
+                        <p class="font-bold">100% Higienis</p>
+                        <p class="font-light">Standar Medis UV-C</p>
+                    </div>
+                </template>
             </div>
             <div class="flex items-center  gap-2">
-                <div class="bg-blue-50 h-2/3 p-1 flex items-center">
-                    <v-icon class="text-green-600" icon="mdi-truck" color="blue-darken-2" />
-                </div>
+                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="10em" />
+                <template v-else>
+                    <div class="bg-blue-50 h-2/3 p-1 flex items-center">
+                        <v-icon class="text-green-600" icon="mdi-truck" color="blue-darken-2" />
+                    </div>
+                    <div class="flex flex-col">
+                        <p class="font-bold">Gratis Antar-Jemput</p>
+                        <p class="font-light">Min. Order 3 Kg</p>
+                    </div>
+                </template>
 
-                <div class="flex flex-col">
-                    <p class="font-bold">Gratis Antar-Jemput</p>
-                    <p class="font-light">Min. Order 3 Kg</p>
-                </div>
             </div>
         </v-card>
     </div>
-    <v-card class="p-4 flex gap-8 items-center">
-        <v-text-field prepend-inner-icon="mdi-magnify" placeholder="Cari paket..." variant="outlined" clearable
+    <v-card class="p-4 flex gap-8 items-center justify-between">
+        <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="50em" />
+        <v-text-field v-else prepend-inner-icon="mdi-magnify" placeholder="Cari paket..." variant="outlined" clearable
             single-line hide-details />
-        <p>Menampilkan <span class="font-bold">{{ packages.getPackagesNumber }}</span> paket</p>
+        <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="15em" />
+        <p v-else>Menampilkan <span class="font-bold">{{ packages.getPackagesNumber }}</span> paket</p>
     </v-card>
     <div class="grid grid-cols-3 gap-6">
-        <v-card class="p-6 border-t-8 border-blue-400" v-for="servicePackage in packages.getPackages"
+        <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="n in 3" type="heading, paragraph, button"
+            class="p-6" />
+        <v-card v-else class="p-6 border-t-8 border-blue-400" v-for="servicePackage in packages.getPackages"
             :key="servicePackage.id" v-slot:text>
             <div class="flex flex-col gap-4">
                 <h2 class="font-bold text-3xl">{{ servicePackage.name }}</h2>
@@ -61,14 +73,20 @@
             </div>
         </v-card>
     </div>
-
 </template>
 
 <script setup lang="ts">
+import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
+import type { ViewState } from '@/lib/viewState';
 import { usePackageStore } from '@/stores/packageStore';
+import { onMounted, ref, type Ref } from 'vue';
 
 const packages = usePackageStore();
+const viewState: Ref<ViewState<Package> | null> = ref(null);
+
+onMounted(() => viewState.value = { kind: 'loading' })
+
 </script>
 
 <style scoped></style>

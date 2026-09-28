@@ -1,6 +1,8 @@
 <template>
     <v-card class="p-4 flex gap-4 justify-between">
-        <div v-for="(step, index) in steps" :key="index"
+        <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="step in steps" width="16rem"
+            type="avatar, heading" />
+        <div v-else v-for="(step, index) in steps" :key="index"
             :class="[colors[step.status], 'flex', 'items-center', 'gap-4']">
             <v-icon v-if="step.status === 'done'" icon="mdi-check" />
             <p v-else class="text-4xl">{{ index + 1 }}</p>
@@ -11,7 +13,8 @@
         </div>
     </v-card>
     <v-card class="p-6">
-        <v-col>
+        <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, image" />
+        <v-col v-else>
             <v-row class="flex items-center justify-between">
                 <p>PAKET YANG DIPILIH</p>
                 <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Paket" class="text-cyan-700" />
@@ -30,7 +33,8 @@
     </v-card>
     <v-card class="p-6">
         <v-col>
-            <v-row class="flex items-center justify-between">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="30rem" />
+            <v-row v-else class="flex items-center justify-between">
                 <div class="flex gap-2">
                     <v-icon icon="mdi-map-marker-outline" />
                     <h3 class="font-bold text-xl">Alamat Penjemputan & Pengantaran</h3>
@@ -39,7 +43,11 @@
                     class="text-cyan-700" />
             </v-row>
             <v-row class="flex gap-4">
-                <v-card class="flex flex-col p-4 gap-4" v-for="(address, index) in addresses" :key="index">
+                <v-card v-if="viewState?.kind === 'loading'" v-for="item in 2">
+                    <v-skeleton-loader type="heading, paragraph, text" width="30rem" />
+                </v-card>
+
+                <v-card v-else class="flex flex-col p-4 gap-4" v-for="(address, index) in addresses" :key="index">
                     <v-row class="flex justify-between items-center">
                         <p class="font-bold">{{ address.title }}</p>
                         <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Alamat"
@@ -56,7 +64,8 @@
                     </v-row>
                 </v-card>
             </v-row>
-            <v-row class="flex justify-between p-4 bg-green-100 rounded-xl text-green-700 items-center">
+            <v-row v-if="viewState?.kind === 'content'"
+                class="flex justify-between p-4 bg-green-100 rounded-xl text-green-700 items-center">
                 <v-row class="flex gap-4 items-center">
                     <v-icon icon="mdi-atv" size="x-large" />
                     <div>
@@ -69,18 +78,24 @@
         </v-col>
     </v-card>
     <v-col class="flex flex-col items-center gap-2">
-        <v-btn class="bg-cyan-700 text-cyan-50" block prepend-icon="mdi-lock-outline" size="x-large"
-            text="Konfirmasi & Buat Pesanan" />
-        <span class="flex gap-1 items-center">
+        <v-btn class="bg-cyan-700 text-cyan-50" block
+            :prepend-icon="viewState?.kind === 'content' && 'mdi-lock-outline'" size="x-large"
+            :text="viewState?.kind === 'content' ? 'Konfirmasi & Buat Pesanan' : ''"
+            :disabled="viewState?.kind !== 'content'" />
+        <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
             <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
-            <p class="text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi Kerusakan</p>
+            <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
+                Kerusakan</p>
         </span>
     </v-col>
 </template>
 
 <script setup lang="ts">
+import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
+import type { ViewState } from '@/lib/viewState';
 import { usePackageStore } from '@/stores/packageStore';
+import { type Ref, ref, onMounted } from 'vue';
 
 interface OrderStep {
     step: string,
@@ -125,6 +140,10 @@ const addresses: Address[] = [
         recipient: 'Resepsionis / Siti'
     }
 ]
+
+const viewState: Ref<ViewState<Package> | null> = ref(null);
+
+onMounted(() => viewState.value = { kind: 'loading' })
 </script>
 
 <style scoped></style>

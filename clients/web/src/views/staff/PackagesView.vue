@@ -1,18 +1,22 @@
 <template>
     <div class="flex justify-between gap-32">
-        <div class="flex flex-col gap-1">
-            <p class="text-cyan-700">
-                <span>
+        <div class="flex flex-col">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, heading, subtitle" width="30rem"
+                class="bg-transparent" />
+            <template v-else>
+                <span class="text-cyan-700">
                     <v-icon icon="mdi-circle-small" />
+                    DAFTAR PAKET LAUNDRY
                 </span>
-                DAFTAR PAKET LAUNDRY
-            </p>
-            <h1 class="font-bold text-4xl">Manajemen Paket Laundry</h1>
-            <p>Kelola jenis layanan, harga per kilo/satuan, dan detail paket
-                untuk mempermudah kasir dan kenyamanan pelanggan.</p>
+                <h1 class="font-bold text-4xl">Manajemen Paket Laundry</h1>
+                <p>Kelola jenis layanan, harga per kilo/satuan, dan detail paket
+                    untuk mempermudah kasir dan kenyamanan pelanggan.</p>
+            </template>
         </div>
         <v-card class="p-4 flex">
-            <div class="flex items-center gap-2">
+            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="avatar, sentences" width="10rem"
+                class=" bg-transparent" />
+            <div v-else class="flex items-center gap-2">
                 <div class="bg-blue-50 h-2/3 p-1 flex items-center">
                     <v-icon class="text-cyan-600" icon="mdi-archive-outline" />
                 </div>
@@ -24,12 +28,18 @@
         </v-card>
     </div>
     <v-card class="p-4 flex items-center">
-        <v-text-field prepend-inner-icon="mdi-magnify" placeholder="Cari paket..." variant="outlined" clearable
+        <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="100rem" class="bg-transparent" />
+        <v-text-field v-else prepend-inner-icon="mdi-magnify" placeholder="Cari paket..." variant="outlined" clearable
             single-line hide-details />
     </v-card>
     <v-card class="p-6 flex flex-col gap-2">
         <div class="flex flex-col gap-4">
-            <div class="flex justify-between" v-for="(servicePackage) in packages.getPackages" :key="servicePackage.id">
+            <div v-for="n in 3" v-if="viewState?.kind === 'loading'" class="flex justify-between">
+                <v-skeleton-loader type="sentences" width="20rem" class="bg-transparent" />
+                <v-skeleton-loader type="heading" width="10rem" class="bg-transparent" />
+            </div>
+            <div v-else class="flex justify-between" v-for="(servicePackage) in packages.getPackages"
+                :key="servicePackage.id">
                 <div>
                     <h2 class="font-bold">{{ servicePackage.name }}</h2>
                     <p class="font-light">{{ servicePackage.description }}</p>
@@ -43,8 +53,9 @@
             </div>
         </div>
         <div class="flex justify-end">
-            <v-btn class="bg-cyan-700 text-cyan-50" prepend-icon="mdi-plus" text="Tambah Paket baru"
-                @click="openPackageDialog('new')" />
+            <v-btn class="bg-cyan-700 text-cyan-50" :prepend-icon="viewState?.kind === 'content' ? 'mdi-plus' : ''"
+                :text="viewState?.kind === 'content' ? 'Tambah Paket Baru' : ''"
+                :disabled="viewState?.kind === 'loading'" @click="openPackageDialog('new')" />
         </div>
     </v-card>
     <package-dialog v-model="isPackageDialogOpen" :type="packageDialogType" />
@@ -52,9 +63,11 @@
 
 <script setup lang="ts">
 import PackageDialog from '@/components/staff/PackageDialog.vue';
+import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
+import type { ViewState } from '@/lib/viewState';
 import { usePackageStore } from '@/stores/packageStore';
-import { ref } from 'vue';
+import { onMounted, ref, type Ref } from 'vue';
 
 const packages = usePackageStore();
 const isPackageDialogOpen = ref(false);
@@ -64,6 +77,10 @@ function openPackageDialog(type: 'new' | 'edit') {
     packageDialogType.value = type;
     isPackageDialogOpen.value = true;
 }
+
+const viewState: Ref<ViewState<Package> | null> = ref(null);
+
+onMounted(() => viewState.value = { kind: 'loading' })
 
 </script>
 

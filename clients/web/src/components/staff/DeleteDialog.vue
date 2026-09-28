@@ -9,7 +9,7 @@
         <template v-slot:default="{ isActive }">
             <v-card :title="title">
                 <v-card-text>
-                    Yakin mau dihapus?
+                    Hapus paket ini?
                 </v-card-text>
 
                 <v-card-actions>

@@ -1,23 +1,26 @@
 <template>
-    <v-card class="mx-auto mt-10" max-width="480" title="Login">
-        <v-card-text>
-            <v-text-field v-model="username" autocomplete="username" :error-messages="usernameErrors"
-                label="Nama pengguna" @update:model-value="clearServerError" />
-            <v-text-field v-model="password" :append-inner-icon="show ? 'mdi-eye-off' : 'mdi-eye-open'"
-                autocomplete="current-password" :error-messages="passwordErrors" label="Kata sandi"
-                :type="show ? 'text' : 'password'" @click:append-inner="show = !show"
-                @update:model-value="clearServerError" @keyup.enter="submit" />
-            <!-- Form-level refusal: wrong credentials / unreachable IdP. -->
-            <v-alert v-if="formError" class="mt-2" type="error" variant="tonal" density="compact">
-                {{ formError }}
-            </v-alert>
-        </v-card-text>
-        <v-card-actions>
-            <v-spacer />
-            <!-- Disabled while in flight (A.6.3). -->
-            <v-btn color="primary" :disabled="busy" :loading="busy" variant="flat" @click="submit">Login</v-btn>
-        </v-card-actions>
-    </v-card>
+    <div class="flex justify-center">
+        <v-card class="flex flex-col p-4 w-3xl" title="Login">
+            <v-card-text>
+                <v-text-field v-model="username" autocomplete="username" :error-messages="usernameErrors"
+                    label="Nama pengguna" @update:model-value="clearServerError" />
+                <v-text-field v-model="password" :append-inner-icon="show ? 'mdi-eye-off' : 'mdi-eye-open'"
+                    autocomplete="current-password" :error-messages="passwordErrors" label="Kata sandi"
+                    :type="show ? 'text' : 'password'" @click:append-inner="show = !show"
+                    @update:model-value="clearServerError" @keyup.enter="submit" />
+                <!-- Form-level refusal: wrong credentials / unreachable IdP. -->
+                <v-alert v-if="formError" class="mt-2" type="error" variant="tonal" density="compact">
+                    {{ formError }}
+                </v-alert>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer />
+                <!-- Disabled while in flight (A.6.3). -->
+                <v-btn size="x-large" class="bg-cyan-700 text-cyan-50" :disabled="busy" :loading="busy"
+                    @click="submit">Login</v-btn>
+            </v-card-actions>
+        </v-card>
+    </div>
 </template>
 
 <script setup lang="ts">
