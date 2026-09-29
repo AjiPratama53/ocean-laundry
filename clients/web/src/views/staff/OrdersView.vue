@@ -1,21 +1,22 @@
 <template>
-    <staff-error v-if="viewState?.kind === 'error'" />
-    <template v-else>
+    <staff-error v-if="viewState.kind === 'error'" :problem="store.lastError" :status="store.lastStatus"
+        @retry="load" />
+    <v-col v-else class="flex flex-col gap-4">
         <div class="flex justify-between gap-32">
             <div class="flex flex-col">
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, heading, subtitle" width="30rem"
+                <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text, heading, subtitle" width="30rem"
                     class="bg-transparent" />
                 <template v-else>
                     <span class="text-cyan-700">
                         <v-icon icon="mdi-circle-small" />
                         DAFTAR PESANAN
                     </span>
-                    <h1 class="font-bold text-4xl">Tracking Pesanan Laundry</h1>
-                    <p>Kelola pesanan pelanggan.</p>
+                    <h1 class="font-bold text-4xl">{{ heading }}</h1>
+                    <p>{{ subheading }}</p>
                 </template>
             </div>
             <v-card class="p-4 flex">
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="avatar, sentences" width="10rem"
+                <v-skeleton-loader v-if="viewState.kind === 'loading'" type="avatar, sentences" width="10rem"
                     class=" bg-transparent" />
                 <div v-else class="flex items-center gap-2">
                     <div class="bg-blue-50 h-2/3 p-1 flex items-center">
@@ -23,21 +24,29 @@
                     </div>
                     <div class="flex flex-col">
                         <p class="font-light">Total Pesanan</p>
-                        <p class="font-bold text-3xl">{{ orders.getOrdersNumber }}</p>
+                        <p class="font-bold text-3xl">{{ store.getOrdersNumber }}</p>
                     </div>
                 </div>
             </v-card>
         </div>
-        <v-card class="p-4 flex items-center">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="100rem"
+        <v-card class="p-4 flex items-center gap-2">
+            <v-skeleton-loader v-if="viewState.kind === 'loading'" type="heading" width="100rem"
                 class="bg-transparent" />
-            <v-text-field v-else v-model="search" prepend-inner-icon="mdi-magnify" placeholder="Cari paket..."
-                variant="outlined" clearable single-line hide-details />
+            <template v-else>
+                <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" placeholder="Cari paket..."
+                    variant="outlined" clearable single-line hide-details class="flex-1" />
+                <!-- Status filter maps to GET /orders?status=… (one URL per queue, A.2.1) -->
+                <v-select v-model="statusFilter" :items="statusOptions" label="Status" variant="outlined"
+                    density="compact" hide-details clearable class="max-w-56" @update:model-value="onStatusChange" />
+            </template>
         </v-card>
 
-        <order-empty v-if="viewState?.kind === 'empty'" :search />
+        <order-empty v-if="viewState.kind === 'empty'" :is-customer="isCustomerView" />
         <v-card v-else class="p-6 flex flex-col gap-2">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'"
+            <p v-if="store.stale" class="text-amber-700 text-sm">Menampilkan data per {{
+                store.fetchedAt?.toLocaleTimeString()
+            }}. Menyambung ulang… {{ store.staleNote }}</p>
+            <v-skeleton-loader v-if="viewState.kind === 'loading'"
                 type="table-thead, table-row, table-row, table-row" />
             <v-table v-else>
                 <thead>
@@ -50,67 +59,166 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(order, index) in orders.getOrders" :key="order.id">
+                    <tr v-for="(order, index) in filtered" :key="order.id">
                         <td>{{ index + 1 }}</td>
-                        <td>{{ packages.getPackageById(order.packageId)?.name }}</td>
+                        <td>{{ packages.getPackageById(order.packageId)?.name ?? order.packageId }}</td>
                         <td>{{ order.pickupAddress }}</td>
                         <td>{{ order.status }}</td>
-                        <td>
-                            <v-btn class="bg-cyan-700 text-cyan-50" text="Update" @click="handleUpdate(order.id)" />
+                        <td class="flex gap-2 items-center">
+                            <!-- Customer/courier tracking is a deep-linkable page (A.2.1);
+                                     staff work status through the Update dialog below, so no
+                                     Detail button in the staff queue. -->
+                            <v-btn v-if="!isStaffView" variant="outlined" text="Detail" :to="detailTo(order.id)" />
+                            <!-- Staff/courier transitions are scope-gated UX only (A.2.2) -->
+                            <v-btn v-if="canFulfil" class="bg-cyan-700 text-cyan-50" text="Update"
+                                @click="handleUpdate(order.id)" />
                         </td>
                     </tr>
                 </tbody>
             </v-table>
-            <v-pagination v-if="viewState?.kind === 'content'" :length="4" rounded></v-pagination>
         </v-card>
-        <order-dialog v-model="isOrderDialogOpen" :order="selectedOrder" :package="selectedPackage" />
-    </template>
+        <order-dialog v-if="selectedOrder" v-model="isOrderDialogOpen" :order="selectedOrder" :package="selectedPackage"
+            @done="load" />
+    </v-col>
 </template>
 
 <script setup lang="ts">
 import OrderEmpty from '@/components/OrderEmpty.vue';
 import OrderDialog from '@/components/staff/OrderDialog .vue';
 import StaffError from '@/components/staff/StaffError.vue';
-import type { Order, Package } from '@/lib/api';
-import type { ViewState } from '@/lib/viewState';
+import { ApiError, type Order, type OrderStatus, type Package } from '@/lib/api';
 import { useOrderStore } from '@/stores/orderStore';
 import { usePackageStore } from '@/stores/packageStore';
-import { onMounted, ref, type Ref } from 'vue';
+import { useSessionStore } from '@/stores/session';
+import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const orders = useOrderStore();
+const store = useOrderStore();
 const packages = usePackageStore();
-const search = ref('');
-const isOrderDialogOpen = ref(false);
+const session = useSessionStore();
+const route = useRoute();
+const router = useRouter();
 
-const viewState: Ref<ViewState<Order> | null> = ref(null);
+const search = ref('');
+const statusFilter = ref<OrderStatus | null>((route.query.status as OrderStatus) || null);
+const isOrderDialogOpen = ref(false);
+const viewState = ref<{ kind: 'loading' | 'empty' | 'error' | 'content' }>({ kind: 'loading' });
 
 const selectedOrder: Ref<Order | undefined> = ref(undefined);
-const selectedPackage: Ref<Package | undefined> = ref(undefined);
+const selectedPackage: Ref<Package | undefined | null> = ref(undefined);
+
+// Scope watch: fulfil UI only with orders:fulfil or deliveries:write (UX only).
+const canFulfil = computed(() =>
+    session.scopes.includes('orders:fulfil') || session.scopes.includes('deliveries:write'),
+);
+const isCustomerView = computed(() => !session.roles.includes('staff') && !session.roles.includes('courier'));
+// Staff queue has no detail page (redirects to /staff/orders) —
+// status work happens in the Update dialog.
+const isStaffView = computed(() => route.path.startsWith('/staff'));
+
+const statusOptions: Array<{ title: string; value: OrderStatus }> = [
+    { title: 'Placed', value: 'placed' },
+    { title: 'Picked up', value: 'picked_up' },
+    { title: 'Weighed', value: 'weighed' },
+    { title: 'Awaiting payment', value: 'awaiting_payment' },
+    { title: 'Washing', value: 'washing' },
+    { title: 'Ready', value: 'ready' },
+    { title: 'Delivering', value: 'delivering' },
+    { title: 'Completed', value: 'completed' },
+    { title: 'Cancelled', value: 'cancelled' },
+];
+
+const heading = computed(() => {
+    if (route.path.startsWith('/courier/pickups')) return 'Penjemputan';
+    if (route.path.startsWith('/courier/deliveries')) return 'Pengantaran';
+    if (route.path.startsWith('/staff')) return 'Tracking Pesanan Laundry';
+    if (statusFilter.value === 'picked_up') return 'Perlu Ditimbang';
+    return 'Pesanan Saya';
+});
+
+const subheading = computed(() => {
+    if (route.path.startsWith('/courier')) return 'Kelola penjemputan & pengantaran.';
+    if (route.path.startsWith('/staff')) return 'Kelola pesanan pelanggan.';
+    return 'Lacak pesanan Anda.';
+});
+
+const filtered = computed(() => {
+    const q = search.value.trim().toLowerCase();
+    if (!q) return store.getOrders;
+    return store.getOrders.filter((o) =>
+        o.id.toLowerCase().includes(q) || o.pickupAddress.toLowerCase().includes(q),
+    );
+});
+
+/** Detail address keeps the customer namespace (/orders/:id is the shared
+ * deep-link; OrderDetailView is customer-only: track/pay/cancel). */
+function detailTo(id: string): string {
+    if (route.path.startsWith('/customer')) return `/customer/orders/${id}`;
+    return `/orders/${id}`;
+}
+
+function currentStatus(): OrderStatus | undefined {
+    if (route.path === '/courier/pickups') return 'placed';
+    if (route.path === '/courier/deliveries') return 'ready';
+    return statusFilter.value ?? undefined;
+}
+
+function onStatusChange() {
+    router.replace({
+        path: route.path,
+        query: { ...route.query, status: statusFilter.value ?? undefined },
+    }).catch(() => { });
+    void load();
+}
+
+function pollInterval(): number {
+    const v = Number(import.meta.env.VITE_POLL_INTERVAL_MS ?? 10000);
+    return Number.isFinite(v) && v > 0 ? v : 10000;
+}
+
+let timer: ReturnType<typeof setInterval> | null = null;
+
+async function load() {
+    if (!store.loaded) viewState.value = { kind: 'loading' };
+    try {
+        await store.fetchOrders({ status: currentStatus(), limit: 20 });
+        // Package names for the table (one extra read per screen at most).
+        if (!packages.loaded) await packages.fetchPackages().catch(() => { });
+        viewState.value = { kind: store.getOrders.length === 0 ? 'empty' : 'content' };
+    } catch (e) {
+        if (e instanceof ApiError && store.loaded && store.getOrders.length > 0) {
+            viewState.value = { kind: 'content' };
+        } else {
+            viewState.value = { kind: 'error' };
+        }
+    }
+}
 
 function handleUpdate(id: string) {
-    const order = orders.getOrderById(id);
+    const order = store.getOrderById(id);
     if (!order) return;
     selectedOrder.value = order;
-
-    const selectedPackageForOrder = packages.getPackageById(order.packageId);
-    if (!selectedPackageForOrder) return;
-    selectedPackage.value = selectedPackageForOrder;
-
+    selectedPackage.value = packages.getPackageById(order.packageId) ?? null;
     isOrderDialogOpen.value = true;
 }
 
-onMounted(() => {
-    viewState.value = { kind: 'loading' };
-    try {
-        // Fetch data here
-        setTimeout(() => {
-            viewState.value = { kind: 'content', }
-        }, 3000);
-    } catch (error) {
-        viewState.value = { kind: 'error' }
-    }
-})
+watch(() => route.query.status, (s) => {
+    statusFilter.value = (s as OrderStatus) || null;
+    void load();
+});
 
+watch(() => route.path, () => void load());
+
+onMounted(async () => {
+    if (route.path === '/courier/pickups') statusFilter.value = 'placed';
+    if (route.path === '/courier/deliveries') statusFilter.value = 'ready';
+    await load();
+    timer = setInterval(load, pollInterval());
+});
+
+onUnmounted(() => {
+    if (timer) clearInterval(timer);
+});
 </script>
 
 <style scoped></style>

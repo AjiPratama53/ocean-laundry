@@ -6,7 +6,7 @@
             <p>
                 Tidak ditemukan paket laundry yang cocok dengan kriteria pencarian
             </p>
-            <p class="bg-blue-100 text-cyan-700 font-medium px-2 py-1 rounded-xl">"
+            <p v-if="search" class="bg-blue-100 text-cyan-700 font-medium px-2 py-1 rounded-xl">"
                 {{
                     search
                 }}"</p>

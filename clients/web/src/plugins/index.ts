@@ -9,11 +9,9 @@ import type { App } from "vue";
 
 // Plugins
 import vuetify from "./vuetify";
-import router from "@/router";
-import { createPinia } from "pinia";
 
 export function registerPlugins(app: App) {
-  app.use(createPinia());
-  app.use(router);
+  // Vuetify only. Pinia + router are installed once in main.ts —
+  // installing a second Pinia here would fork the store registry.
   app.use(vuetify);
 }

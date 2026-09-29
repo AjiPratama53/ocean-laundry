@@ -132,8 +132,12 @@ packagesRouter.patch(
         );
     }
 
-    const { packageName, packagePrice } = req.body;
-    if (packageName === undefined && packagePrice === undefined) {
+    const { packageName, packageDesc, packagePrice } = req.body;
+    if (
+      packageName === undefined &&
+      packageDesc === undefined &&
+      packagePrice === undefined
+    ) {
       return res
         .status(400)
         .json(
@@ -161,6 +165,7 @@ packagesRouter.patch(
 
       const row = await updatePackage(parsed.data.packageId, {
         name: packageName,
+        description: packageDesc,
         price: packagePrice,
       });
       if (!row) {

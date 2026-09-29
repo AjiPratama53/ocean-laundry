@@ -77,8 +77,26 @@ describe("Contract — /packages", () => {
     expect(res.body.price).toBe(12345);
   });
 
-  it("GET /packages/{packageId} for a nonexistent id returns 404 as Problem Details", async () => {
-    const res = await request(app)
+  it("PATCH /packages/{packageId} persists packageDesc (contract UpdatePackage field)", async () => {
+    const created = await request(app)
+      .post("/v1/packages")
+      .set("Authorization", `Bearer ${writeToken}`)
+      .send({
+        packageName: "Patch Desc Wash",
+        packageDesc: "original description",
+        packagePrice: 5000,
+      });
+    expect(created.status).toBe(201);
+
+    const patched = await request(app)
+      .patch(`/v1/packages/${created.body.id}`)
+      .set("Authorization", `Bearer ${writeToken}`)
+      .send({ packageDesc: "updated description" });
+    expect(patched.status).toBe(200);
+    expect(patched.body.description).toBe("updated description");
+  });
+
+  it("GET /packages/{packageId} for a nonexistent id returns 404 as Problem Details", async () => {    const res = await request(app)
       .get(`/v1/packages/pkg_${randomUUID()}`)
       .set("Authorization", `Bearer ${readToken}`);
     expect(res.status).toBe(404);

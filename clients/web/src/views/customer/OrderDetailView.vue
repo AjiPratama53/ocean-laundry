@@ -1,9 +1,9 @@
 <template>
-    <order-empty is-customer v-if="viewState?.kind === 'empty'" />
-    <customer-error v-else-if="viewState?.kind === 'error'" />
-    <template v-else>
+    <order-empty is-customer v-if="viewState.kind === 'empty'" />
+    <customer-error v-else-if="viewState.kind === 'error'" :problem="problem" :status="status" @retry="load" />
+    <v-col v-else class="flex flex-col gap-4">
         <v-row class="flex justify-between items-center">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, heading, subtitle" width="30rem"
+            <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text, heading, subtitle" width="30rem"
                 class="bg-transparent" />
             <v-col v-else>
                 <p class="text-cyan-700">
@@ -12,116 +12,103 @@
                     </span>
                     PELACAKAN REAL-TIME
                 </p>
-                <h1 class="font-bold text-4xl">Order #OrderID</h1>
+                <h1 class="font-bold text-4xl">Order #{{ order?.id.slice(0, 8) }}</h1>
+                <p v-if="stale" class="text-amber-700 text-sm">Data per {{ fetchedAt?.toLocaleTimeString() }} —
+                    menyambung ulang…</p>
             </v-col>
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="actions" width="30rem"
-                class=" bg-transparent" />
+            <v-skeleton-loader v-if="viewState.kind === 'loading'" type="button" width="30rem"
+                class=" bg-transparent justify-end" />
             <v-row v-else class="flex gap-2 justify-end">
-                <v-btn prepend-icon="mdi-refresh" text="Refresh" />
-                <v-btn prepend-icon="mdi-invoice-text-outline" text="Unduh Nota E-Receipt" />
+                <v-btn prepend-icon="mdi-refresh" text="Refresh" @click="load" :loading="refreshing" />
+                <v-btn v-if="canPay && order?.status === 'awaiting_payment'" color="primary"
+                    :to="`/customer/payments/new?orderId=${order?.id}`" text="Bayar" />
             </v-row>
         </v-row>
         <v-card class="p-6 flex justify-between items-center">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="10rem" class=" bg-transparent" />
+            <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text" width="10rem" class=" bg-transparent" />
             <h2 v-else class="font-bold text-xl">Status</h2>
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="10rem"
+            <v-skeleton-loader v-if="viewState.kind === 'loading'" type="heading" width="10rem"
                 class=" bg-transparent" />
             <div v-else class="flex bg-green-200 text-green-800 px-3 py-1 rounded-2xl">
                 <v-icon icon="mdi-circle-small" />
-                <p>{{ orderStatusKey[order.status] }}</p>
+                <p>{{ order ? orderStatusKey[order.status] : '' }}</p>
             </div>
         </v-card>
         <v-card class="p-6 flex flex-col gap-4">
             <v-row class="flex justify-between items-center">
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="15rem"
+                <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text" width="15rem"
                     class=" bg-transparent" />
                 <h2 v-else class="font-bold text-xl">Ringkasan Pesanan</h2>
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="15rem"
-                    class=" bg-transparent" />
-
-                <div v-else class="flex bg-green-200 text-green-800 px-3 py-1 rounded-2xl">
-                    <p>{{ paymentStatusKey['paid'] }}</p>
-                </div>
             </v-row>
             <v-divider />
             <v-row class="flex justify-between items-center">
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="10rem"
+                <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text" width="10rem"
                     class=" bg-transparent" />
-                <p v-else>Paket:</p>
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text" width="15rem"
+                <p v-else>Paket Laundry</p>
+                <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text" width="15rem"
                     class=" bg-transparent" />
-                <p v-else class="font-bold">{{ selectedPackage.name }}</p>
+                <p v-else class="font-bold">{{ pkg?.name ?? order?.packageId }} (Rp {{ formatBalance(pkg?.price) }}/kg)
+                </p>
             </v-row>
             <v-divider />
             <v-col class="flex flex-col">
-                <v-row v-if="viewState?.kind === 'loading'" class="flex justify-between items-center">
+                <v-row v-if="viewState.kind === 'loading'" class="flex justify-between items-center">
                     <v-skeleton-loader type="paragraph" width="15rem" class=" bg-transparent" />
                     <v-skeleton-loader type="paragraph" width="10rem" class=" bg-transparent" />
                 </v-row>
-                <template v-else>
+                <template v-else-if="order">
                     <v-row class="flex justify-between items-center">
-                        <p>Cuci Komplit ({{ (order.weightGrams ?? 0) / 1000 }} x Rp {{
-                            formatBalance(selectedPackage.price)
-                        }})
+                        <p>Alamat penjemputan</p>
+                        <p>{{ order.pickupAddress }}</p>
+                    </v-row>
+                    <v-row class="flex justify-between items-center">
+                        <p>Berat</p>
+                        <p>{{ order.weightGrams != null ? `${order.weightGrams / 1000} kg` : '—' }}</p>
+                    </v-row>
+                    <v-row class="flex justify-between items-center">
+                        <p class="font-bold">Total</p>
+                        <p class="font-bold text-2xl text-cyan-700">
+                            {{ order.totalAmount ? `Rp ${formatBalance(order.totalAmount)}` : '—' }}
                         </p>
-                        <p>Rp {{ formatBalance(order.totalAmount) }}</p>
-                    </v-row>
-                    <v-row class="flex justify-between items-center">
-                        <p>Proteksi Higienis Steril</p>
-                        <p>Rp {{ formatBalance(2000) }}</p>
-                    </v-row>
-                    <v-row class="flex justify-between items-center">
-                        <p class="text-green-700">Ongkir Antar-Jemput</p>
-                        <p>Rp {{ formatBalance(5000) }}</p>
                     </v-row>
                 </template>
             </v-col>
             <v-divider />
-            <v-row class="flex justify-between items-center">
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="10rem"
-                    class=" bg-transparent" />
-                <v-col v-else>
-                    <p>TOTAL PEMBAYARAN</p>
-                    <p class="text-green-700">Terverifikasi Otomatis</p>
-                </v-col>
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="heading" width="15rem" />
-                <p v-else class="font-bold text-2xl text-cyan-700">Rp {{ formatBalance(order.totalAmount) }}</p>
+            <!-- Customer-only actions. Staff/courier status work happens
+                     in the queue dialog (/staff/orders → Update); this screen
+                     never mutates status — only cancel (orders:write). -->
+            <v-row v-if="viewState.kind === 'content'" class="flex gap-2">
+                <v-btn v-if="canCancel && order && ['placed', 'picked_up'].includes(order.status)"
+                    class="bg-red-300 text-red-700" :disabled="acting" :loading="acting" @click="doCancel"
+                    text="Batalkan" />
+                <p v-else>Pesanan tidak dapat dibatalkan dalam status ini.</p>
             </v-row>
+            <v-alert v-if="actionNote" type="warning" variant="tonal" density="compact">{{ actionNote }}</v-alert>
         </v-card>
-        <template v-if="viewState?.kind === 'content'">
-
+        <template v-if="viewState.kind === 'content'">
             <v-card class="p-6 flex flex-col gap-4 bg-blue-100">
                 <span class="flex gap-2 text-cyan-700 items-center">
                     <v-icon icon="mdi-shield-check-outline" />
                     <h3 class="font-bold text-lg">Jaminan Kualitas Ocean Laundry</h3>
                 </span>
-                <span v-for="assurance in qualityAssurances" class="flex gap-2 items-center">
+                <span v-for="assurance in qualityAssurances" :key="assurance" class="flex gap-2 items-center">
                     <v-icon icon="mdi-check-circle-outline text-green-700" />
                     <p>{{ assurance }}</p>
                 </span>
             </v-card>
-            <v-card class="p-6 flex justify-between items-center">
-                <v-row class="items-center">
-                    <v-icon class="text-cyan-700" icon="mdi-headset bg-blue-100 px-4 py-6 rounded-2xl" />
-                    <v-col>
-                        <p class="font-bold">Ada Keluhan / Request?</p>
-                        <p class="font-light">Layanan CS Siaga 08:00 - 21:00</p>
-                    </v-col>
-                </v-row>
-                <v-btn class="bg-blue-100 text-cyan-700" text="Pusat Bantuan" size="large" />
-            </v-card>
         </template>
-    </template>
-
+    </v-col>
 </template>
 
 <script setup lang="ts">
 import CustomerError from '@/components/customer/CustomerError.vue';
 import OrderEmpty from '@/components/OrderEmpty.vue';
-import type { Order, Package } from '@/lib/api';
+import { ApiError, getPackageConditional, type Order, type OrderStatus, type Package, type Problem } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
-import type { ViewState } from '@/lib/viewState';
-import { type Ref, ref, onMounted } from 'vue';
+import { useOrderStore } from '@/stores/orderStore';
+import { useSessionStore } from '@/stores/session';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 const qualityAssurances: string[] = [
     '100% Bersih, Segar, & Bebas Kuman',
@@ -129,28 +116,23 @@ const qualityAssurances: string[] = [
     'Garansi Ganti Rugi Rusak atau Hilang hingga 5x Lipat'
 ]
 
-const order: Ref<Order> = ref(
-    {
-        id: "ord_001",
-        customerId: "cus_001",
-        courierId: null,
-        packageId: "pkg_001",
-        pickupAddress: "Jl. Kaliurang No. 10",
-        status: "awaiting_payment",
-        weightGrams: 2000,
-        totalAmount: 10000,
-        createdAt: "2026-09-11 07:49:13.153895+00",
-        updatedAt: null
-    }
-)
-const selectedPackage: Ref<Package> = ref({
-    id: "pkg_002",
-    name: "Express Wash",
-    description: "Cuci lipat 1 hari",
-    price: 6000,
-});
+const route = useRoute();
+const store = useOrderStore();
+const session = useSessionStore();
 
-const orderStatusKey = {
+const viewState = ref<{ kind: 'loading' | 'empty' | 'error' | 'content' }>({ kind: 'loading' });
+const order = ref<Order | null>(null);
+const pkg = ref<Package | null>(null);
+const etag = ref<string | null>(null);
+const problem = ref<Problem | null>(null);
+const status = ref<number | null>(null);
+const fetchedAt = ref<Date | null>(null);
+const stale = ref(false);
+const refreshing = ref(false);
+const acting = ref(false);
+const actionNote = ref<string | null>(null);
+
+const orderStatusKey: Record<OrderStatus, string> = {
     'placed': 'Dibuat',
     'picked_up': 'Dalam Penjemputan',
     'weighed': 'Ditimbang',
@@ -162,24 +144,87 @@ const orderStatusKey = {
     'cancelled': 'Dibatalkan'
 }
 
-const paymentStatusKey = {
-    'pending': 'Pending',
-    'paid': 'Lunas',
-    'failed': 'Gagal'
+// Customer-only screen: pay + cancel. Status transitions (weigh/wash/
+// ready/pickup/delivery/complete) live in the staff queue dialog.
+const canPay = computed(() => session.scopes.includes('payments:write'));
+const canCancel = computed(() => session.scopes.includes('orders:write'));
+
+function id(): string {
+    return String(route.params.id ?? '');
 }
 
-const viewState: Ref<ViewState<Package> | null> = ref(null);
-
-onMounted(() => {
+async function load() {
     viewState.value = { kind: 'loading' };
+    problem.value = null;
+    status.value = null;
+    actionNote.value = null;
+    refreshing.value = true;
     try {
-        // Fetch data here
-        setTimeout(() => {
-            viewState.value = { kind: 'content', }
-        }, 3000);
-    } catch (error) {
-        viewState.value = { kind: 'error' }
+        const r = await store.fetchOrder(id(), etag.value);
+        if (r.notModified && !order.value) {
+            viewState.value = { kind: 'empty' };
+            return;
+        }
+        if (!r.notModified && r.data) {
+            order.value = r.data;
+            etag.value = r.etag;
+            store.upsert(r.data);
+        }
+        if (!order.value) {
+            viewState.value = { kind: 'empty' };
+            return;
+        }
+        fetchedAt.value = new Date();
+        stale.value = false;
+        // Package name: best-effort single read.
+        try {
+            const pr = await getPackageConditional(order.value.packageId, null);
+            if (!pr.notModified && pr.data) pkg.value = pr.data;
+        } catch {
+            /* table still renders with packageId */
+        }
+        viewState.value = { kind: 'content' };
+    } catch (e) {
+        if (e instanceof ApiError) {
+            status.value = e.status;
+            problem.value = e.problem;
+            // A.3.2: 404 = not found (or not yours — never distinguished).
+            viewState.value = { kind: e.status === 404 && !order.value ? 'empty' : 'error' };
+            if (order.value) {
+                // Holding data while refresh fails -> content + stale (A.5).
+                stale.value = true;
+                viewState.value = { kind: 'content' };
+            }
+        } else {
+            viewState.value = { kind: 'error' };
+        }
+    } finally {
+        refreshing.value = false;
     }
-})</script>
+}
+
+/** Cancel with If-Match (A.8): a 412 means somebody else wrote first —
+ * refresh, re-render, explain in domain terms (A.8.2). */
+async function doCancel() {
+    if (!order.value) return;
+    acting.value = true;
+    actionNote.value = null;
+    try {
+        await store.cancel(order.value.id, etag.value);
+        await load();
+    } catch (e) {
+        if (e instanceof ApiError && e.status === 412) {
+            actionNote.value = 'Pesanan ini sudah ditangani pihak lain — menampilkan data terbaru.';
+            await load();
+        } else if (e instanceof ApiError) {
+            actionNote.value = e.problem.detail;
+        }
+    } finally {
+        acting.value = false;
+    }
+}
+
+onMounted(load);
+</script>
 
 <style scoped></style>

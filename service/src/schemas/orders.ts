@@ -13,7 +13,11 @@ const orderStatusEnum = z.enum([
 ]);
 
 export const orderIdParamSchema = z.object({
-  orderId: z.string().regex(/^ord_[0-9a-f-]{36}$/i, "Invalid order id"),
+  // Accept both generated ids (ord_<uuid>) and legacy/seed ids (e.g. ord_001).
+  // The openapi contract only says type: string, so anything with the ord_
+  // prefix is "well-formed" (→ 404 when absent); anything else is a client
+  // defect (→ 400), keeping the two distinguishable.
+  orderId: z.string().regex(/^ord_[A-Za-z0-9-]{1,64}$/i, "Invalid order id"),
 });
 
 export const getOrdersQuerySchema = z.object({

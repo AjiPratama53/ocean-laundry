@@ -35,20 +35,36 @@ Sistem pemesanan laundry berbasis platform
 
 ## Workflow Table
 
-Workflows yang diimplementasikan pada aplikasi web:
+Workflows yang diimplementasikan pada aplikasi web (satu URL per workflow, A.2.1).
+Setiap baris last-column menamai operasi yang benar-benar ada di `openapi.yaml`.
+Navigasi berbeda per role adalah UX saja (A.2.2) — service tetap satu-satunya
+penegak via scope + ownership (401/403/404 dibedakan, A.3; console attack, A.9).
 
-| Workflow | Screen | Role Permitted | Operation in openapi.yaml |
+| Workflow | Screen (URL) | Role permitted | Operation in openapi.yaml |
 |---|---|---|---|
-| Staff creates new packages | Packages list | staff | GET /packages |
-| | Adds package description | staff | POST /packages |
-| | Packages list | staff | GET /packages |
-| Staff updates a package | Packages list | staff | GET /packages |
-| | Get a specific package | staff | GET /packages/{packageId} |
-| | Updates package | staff | PATCH /packages/{packageId} |
-| | Packages list | staff | GET /packages |
-| Customer creates an order | Packages list | customer | GET /packages |
-| | Package details | customer | GET /packages/{packageId} |
-| | Create order form | customer | POST /orders |
+| Staff kelola katalog | Daftar paket (`/staff/packages`) | staff | GET /packages |
+| | Tambah paket (dialog) | staff | POST /packages |
+| | Ubah paket (dialog, If-Match) | staff | PATCH /packages/{packageId} |
+| | Hapus paket (dialog, If-Match) | staff | DELETE /packages/{packageId} |
+| Customer pesan & bayar | Katalog (`/customer/catalogue`) | customer | GET /packages |
+| | Detail paket | customer | GET /packages/{packageId} |
+| | Buat order (`/customer/orders/new`, Idempotency-Key) | customer | POST /orders |
+| | Lacak order (`/customer/orders/:id`) | customer | GET /orders/{id} |
+| | Bayar (`/customer/payments/new`, Idempotency-Key) | customer | POST /payments |
+| | Nota bayar (`/customer/payments/:id`) | customer | GET /payments/{paymentId} |
+| Staff fulfilment | Antrian (`/staff/orders?status=picked_up`) | staff | GET /orders |
+| | Timbang (If-Match) | staff | POST /orders/{orderId}/weigh |
+| | Mulai cuci (If-Match) | staff | POST /orders/{orderId}/wash |
+| | Tandai siap (If-Match) | staff | POST /orders/{orderId}/ready |
+| Kurir antar-jemput | Penjemputan (`/courier/pickups`) | courier | GET /orders |
+| | Pickup (If-Match) | courier | POST /orders/{orderId}/pickup |
+| | Pengantaran (`/courier/deliveries`) | courier | GET /orders |
+| | Mulai antar (If-Match) | courier | POST /orders/{orderId}/delivery |
+| | Selesai (If-Match) | courier | POST /orders/{orderId}/complete |
+
+Calls per screen: daftar = 1 (GET list, conditional + 304), detail = 2
+maks (GET entity + GET paket untuk nama). Token dilampirkan di satu tempat
+(`src/lib/api.ts`); base URL dari `VITE_API_BASE_URL`.
 
 ## Catatan Penyimpanan Sesi (A.3 butir 5)
 
@@ -59,4 +75,5 @@ Konsekuensi keamanannya: token yang berada di `localStorage` dapat dibaca oleh s
 ## Akun Pengujian Presentasi (Session 7 Demonstration)
 
 1. **Staff Outlet**: Memiliki hak akses/scopes `packages:read`, `packages:write`, `orders:read`, `orders:fulfil`.
-2. **Customer**: Memiliki hak akses/scopes `packages:read`, `orders:read`, `orders:write`, `payments:write`.
+2. **Customer**: Memiliki hak akses/scopes `packages:read`, `orders:read`, `orders:write`, `payments:read`, `payments:write`.
+3. **Kurir** (opsional ketiga): scopes `orders:read`, `deliveries:write`.

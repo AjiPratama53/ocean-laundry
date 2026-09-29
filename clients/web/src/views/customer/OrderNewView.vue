@@ -1,9 +1,9 @@
 <template>
-    <customer-error v-if="viewState?.kind === 'error'" />
+    <customer-error v-if="viewState.kind === 'error'" :problem="loadProblem" :status="loadStatus" @retry="init" />
 
-    <template v-else>
+    <v-col v-else class="flex flex-col gap-4">
         <v-card class="p-4 flex gap-4 justify-between">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" v-for="step in steps" width="16rem"
+            <v-skeleton-loader v-if="viewState.kind === 'loading'" v-for="step in steps" :key="step.step" width="16rem"
                 type="avatar, heading" />
             <div v-else v-for="(step, index) in steps" :key="index"
                 :class="[colors[step.status], 'flex', 'items-center', 'gap-4']">
@@ -17,30 +17,31 @@
             </div>
         </v-card>
         <v-card class="p-6">
-            <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="text, image" />
+            <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text, image" />
             <v-col v-else>
                 <v-row class="flex items-center justify-between">
                     <p>PAKET YANG DIPILIH</p>
-
-                    <!-- route to catalogue view -->
-                    <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Paket" class="text-cyan-700" />
+                    <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Paket" class="text-cyan-700"
+                        to="/customer/catalogue" />
                 </v-row>
                 <v-row class="bg-blue-100 p-4 flex items-center justify-between rounded-xl">
                     <v-col>
-                        <h3 class="font-medium text-2xl">{{ selectedPackage?.name }}</h3>
+                        <h3 class="font-medium text-2xl">{{ selectedPackage?.name ?? '—' }}</h3>
                         <p>{{ selectedPackage?.description }}</p>
                     </v-col>
                     <v-col class="flex flex-col items-end">
-                        <h4 class="font-medium text-2xl text-cyan-700">Rp {{ formatBalance(selectedPackage?.price) }}
+                        <h4 class="font-medium text-2xl text-cyan-700">Rp {{ formatBalance(selectedPackage?.price)
+                            }}
                         </h4>
                         <p>/kg</p>
                     </v-col>
                 </v-row>
+                <p v-if="fieldErrors.packageId" class="text-red-700 text-sm mt-2">{{ fieldErrors.packageId[0] }}</p>
             </v-col>
         </v-card>
         <v-card class="p-6">
             <v-col>
-                <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="sentences" width="30rem" />
+                <v-skeleton-loader v-if="viewState.kind === 'loading'" type="sentences" width="30rem" />
                 <v-row v-else class="flex items-center justify-between">
                     <div class="flex gap-2">
                         <v-icon icon="mdi-map-marker-outline" />
@@ -49,8 +50,11 @@
                     <v-btn variant="text" prepend-icon="mdi-plus-circle-outline" text="Tambah Alamat Baru"
                         class="text-cyan-700" @click="openAddressDialog('new')" />
                 </v-row>
+                <v-text-field v-if="viewState.kind === 'content'" v-model="pickupAddress" class="mt-4"
+                    label="Alamat penjemputan" variant="outlined" :error-messages="fieldErrors.pickupAddress"
+                    @update:model-value="clearField('pickupAddress')" />
                 <v-row class="flex gap-4">
-                    <v-card class="flex-1" v-if="viewState?.kind === 'loading'" v-for="item in 2">
+                    <v-card class="flex-1" v-if="viewState.kind === 'loading'" v-for="item in 2" :key="item">
                         <v-skeleton-loader type="heading, paragraph, text" width="30rem" />
                     </v-card>
 
@@ -79,7 +83,7 @@
                         </v-row>
                     </v-card>
                 </v-row>
-                <v-row v-if="viewState?.kind === 'content'"
+                <v-row v-if="viewState.kind === 'content'"
                     class="flex justify-between p-4 bg-green-100 rounded-xl text-green-700 items-center">
                     <v-row class="flex gap-4 items-center">
                         <v-icon icon="mdi-atv" size="x-large" />
@@ -93,29 +97,34 @@
             </v-col>
         </v-card>
         <v-col class="flex flex-col items-center gap-2">
+            <!-- A.6.3: disabled while in flight; Idempotency-Key carried always. -->
             <v-btn class="bg-cyan-700 text-cyan-50" block
-                :prepend-icon="viewState?.kind === 'content' ? 'mdi-lock-outline' : ''" size="x-large"
-                :text="viewState?.kind === 'content' ? 'Konfirmasi & Buat Pesanan' : ''"
-                :disabled="viewState?.kind !== 'content'" :loading="isPostingOrder" @click="handleNewOrder" />
-            <span v-if="viewState?.kind === 'content'" class=" flex gap-1 items-center">
+                :prepend-icon="viewState.kind === 'content' ? 'mdi-lock-outline' : ''" size="x-large"
+                :text="viewState.kind === 'content' ? 'Konfirmasi & Buat Pesanan' : ''"
+                :disabled="viewState.kind !== 'content' || isPostingOrder" :loading="isPostingOrder"
+                @click="handleNewOrder" />
+            <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="w-full">{{ formError
+                }}</v-alert>
+            <span v-if="viewState.kind === 'content'" class=" flex gap-1 items-center">
                 <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
                 <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
                     Kerusakan</p>
             </span>
         </v-col>
-        <address-dialog v-model="isAddressDialogOpen" :type="addressDialogType"
-            :selected-address="selectedAddress" />
-    </template>
+        <address-dialog v-model="isAddressDialogOpen" :type="addressDialogType" :selected-address="selectedAddress" />
+    </v-col>
 </template>
 
 <script setup lang="ts">
 import AddressDialog from '@/components/customer/AddressDialog.vue';
 import CustomerError from '@/components/customer/CustomerError.vue';
-import type { Package } from '@/lib/api';
+import { ApiError, getPackageConditional, newIdempotencyKey, type Package, type Problem } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
-import type { ViewState } from '@/lib/viewState';
+import { useOrderStore } from '@/stores/orderStore';
 import { usePackageStore } from '@/stores/packageStore';
-import { type Ref, ref, onMounted } from 'vue';
+import { useSessionStore } from '@/stores/session';
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 interface OrderStep {
     step: string,
@@ -134,8 +143,21 @@ const steps: OrderStep[] = [
     { step: 'Pembayaran & Selesai', status: 'waiting' }
 ]
 
+const route = useRoute();
+const router = useRouter();
 const packages = usePackageStore();
-const selectedPackage = packages.getPackageById("pkg_002");
+const orders = useOrderStore();
+const session = useSessionStore();
+
+const selectedPackage = ref<Package | null>(null);
+const pickupAddress = ref('');
+const fieldErrors = ref<Record<string, string[]>>({});
+const formError = ref<string | null>(null);
+const loadProblem = ref<Problem | null>(null);
+const loadStatus = ref<number | null>(null);
+// One idempotency key per user intent (A.6.3): stable across retries of
+// the same submit, fresh for each new submit.
+const idempotencyKey = ref(newIdempotencyKey());
 
 export interface Address {
     id: string,
@@ -162,29 +184,110 @@ const addresses = ref<Address[]>([
     }
 ])
 
-const selectedAddress: Ref<Address | undefined> = ref(addresses.value[0]);
+const selectedAddress = ref<Address | undefined>(addresses.value[0]);
 
 function selectAddress(address: Address) {
     selectedAddress.value = address;
+    pickupAddress.value = address.address;
 }
 
-const viewState: Ref<ViewState<Package> | null> = ref(null);
+const viewState = ref<{ kind: 'loading' | 'error' | 'content' }>({ kind: 'loading' });
 const isPostingOrder = ref(false);
 
 const isAddressDialogOpen = ref(false);
 const addressDialogType = ref<'new' | 'edit'>('new');
 
-async function handleNewOrder() {
-    isPostingOrder.value = true;
+function clearField(f: string) {
+    delete fieldErrors.value[f];
+    formError.value = null;
+}
 
+function applyInvalidParams(e: ApiError) {
+    const list = e.problem['invalid-params'];
+    if (Array.isArray(list) && list.length) {
+        for (const item of list) {
+            const n = String((item as { name?: string }).name ?? '');
+            const reason = String((item as { reason?: string }).reason ?? 'Tidak valid.');
+            const field = /package/i.test(n) ? 'packageId' : /address|pickup/i.test(n) ? 'pickupAddress' : n || 'form';
+            fieldErrors.value[field] = [...(fieldErrors.value[field] ?? []), reason];
+        }
+        return true;
+    }
+    return false;
+}
+
+async function init() {
+    viewState.value = { kind: 'loading' };
+    loadProblem.value = null;
+    loadStatus.value = null;
     try {
-        // Post new order here
-        await setTimeout(() => {
-            isPostingOrder.value = false;
-        }, 3000);
-    } catch (error) {
+        const packageId = String(route.query.packageId ?? '');
+        const cached = packageId ? packages.getPackageById(packageId) : undefined;
+        if (cached) {
+            selectedPackage.value = cached;
+        } else if (packageId) {
+            const r = await getPackageConditional(packageId, null);
+            if (!r.notModified && r.data) {
+                selectedPackage.value = r.data;
+            } else {
+                throw new ApiError(404, {
+                    type: 'about:blank', title: 'Not found', status: 404,
+                    detail: 'Paket tidak ditemukan.', instance: `/packages/${packageId}`,
+                });
+            }
+        } else {
+            if (!packages.loaded) await packages.fetchPackages();
+            selectedPackage.value = packages.getPackages[0] ?? null;
+        }
+        if (selectedAddress.value) pickupAddress.value = selectedAddress.value.address;
+        viewState.value = { kind: 'content' };
+    } catch (e) {
+        if (e instanceof ApiError) {
+            loadStatus.value = e.status;
+            loadProblem.value = e.problem;
+        }
+        viewState.value = { kind: 'error' };
+    }
+}
 
+async function handleNewOrder() {
+    fieldErrors.value = {};
+    formError.value = null;
+    if (!selectedPackage.value) fieldErrors.value.packageId = ['Pilih paket dulu dari katalog.'];
+    if (!pickupAddress.value.trim()) fieldErrors.value.pickupAddress = ['Alamat penjemputan wajib diisi.'];
+    if (Object.keys(fieldErrors.value).length) return;
+
+    isPostingOrder.value = true;
+    try {
+        const order = await orders.placeOrder(
+            {
+                customerId: session.subject,
+                packageId: selectedPackage.value!.id,
+                pickupAddress: pickupAddress.value.trim(),
+            },
+            idempotencyKey.value,
+        );
+        // Deep-linkable result (A.2.1): land on the new order's own URL.
+        await router.push(`/customer/orders/${order.id}`);
+    } catch (e) {
+        if (e instanceof ApiError && (e.status === 400 || e.status === 422)) {
+            // A.6.1: invalid fields land on their fields, in domain terms.
+            if (!applyInvalidParams(e)) formError.value = e.problem.detail;
+        } else if (e instanceof ApiError && e.status === 409) {
+            formError.value = 'Pesanan dengan kunci ini sudah dibuat — periksa daftar pesanan (idempotency).';
+        } else if (e instanceof ApiError && e.status === 403) {
+            formError.value = 'Akun ini tidak diizinkan membuat pesanan.';
+        } else if (e instanceof ApiError) {
+            formError.value = e.problem.detail;
+        } else {
+            formError.value = 'Gagal membuat pesanan. Coba lagi.';
+        }
+        // Fresh key for the next distinct attempt; retries of the same
+        // intent keep the old key (handled by not regenerating on retry
+        // button — here the user edits then resubmits, so rotate).
+        idempotencyKey.value = newIdempotencyKey();
     } finally {
+        isPostingOrder.value = false;
     }
 }
 
@@ -196,17 +299,7 @@ function openAddressDialog(type: 'new' | 'edit') {
     isAddressDialogOpen.value = true;
 }
 
-onMounted(() => {
-    viewState.value = { kind: 'loading' };
-    try {
-        // Fetch data here
-        setTimeout(() => {
-            viewState.value = { kind: 'content', }
-        }, 3000);
-    } catch (error) {
-        viewState.value = { kind: 'error' }
-    }
-})
+onMounted(init);
 </script>
 
 <style scoped></style>
