@@ -1,5 +1,5 @@
 <template>
-    <order-empty v-if="viewState?.kind === 'empty'" />
+    <order-empty is-customer v-if="viewState?.kind === 'empty'" />
     <customer-error v-else-if="viewState?.kind === 'error'" />
     <template v-else>
 
@@ -69,8 +69,10 @@
             <h2 v-else class="font-bold text-xl">Metode Pembayaran</h2>
 
             <div class="flex flex-col gap-2">
-                <div v-for="method in paymentMethods"
-                    class="flex justify-between items-center p-4 bg-blue-100 rounded-xl">
+                <div v-for="method in paymentMethods" :key="method.name"
+                    class="flex justify-between items-center p-4 rounded-xl cursor-pointer border-2 transition-colors"
+                    :class="selectedPaymentMethod === method.name ? 'bg-cyan-100 border-cyan-700' : 'bg-blue-100 border-transparent'"
+                    @click="selectedPaymentMethod = method.name">
                     <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="avatar, sentences" width="20rem"
                         class="bg-transparent" />
                     <v-row v-else class="items-center">
@@ -80,6 +82,8 @@
                             <p class="font-bold">{{ method.name }}</p>
                             <p class="font-light">{{ method.desc }}</p>
                         </v-col>
+                        <v-icon :icon="selectedPaymentMethod === method.name ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                            :class="selectedPaymentMethod === method.name ? 'text-cyan-700' : 'text-gray-500'" />
                     </v-row>
                 </div>
             </div>
@@ -102,7 +106,7 @@
 
 <script setup lang="ts">
 import CustomerError from '@/components/customer/CustomerError.vue';
-import OrderEmpty from '@/components/customer/OrderEmpty.vue';
+import OrderEmpty from '@/components/OrderEmpty.vue';
 import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';
@@ -137,6 +141,7 @@ const paymentMethods: {
 
 const viewState: Ref<ViewState<Package> | null> = ref(null);
 const isPostingPayment = ref(false);
+const selectedPaymentMethod = ref(paymentMethods[0].name);
 
 async function handleNewPayment() {
     isPostingPayment.value = true;

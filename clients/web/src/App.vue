@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <!-- <staff-drawer /> -->
-    <customer-drawer />
+    <staff-drawer />
+    <!-- <customer-drawer /> -->
     <v-main class="bg-blue-50">
       <!-- <v-banner class=" bg-red-100 text-red-700">
         <v-row class="flex justify-between items-center">
@@ -24,14 +24,15 @@
         <v-col class="flex flex-col gap-8">
           <!-- Customer -->
           <!-- <catalogue-view /> -->
-          <!-- <order-new-view /> -->
+          <order-new-view />
           <!-- <order-detail-view /> -->
           <!-- <payment /> -->
 
           <!-- Staff -->
           <!-- <packages-view /> -->
+          <!-- <orders-view /> -->
 
-          <login />
+          <!-- <login /> -->
           <!-- <forbidden-view /> -->
           <!-- <not-found-view /> -->
         </v-col>
@@ -41,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, type Ref } from 'vue'
+import { onMounted } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import StaffDrawer from './components/staff/StaffDrawer.vue'
 import CustomerDrawer from './components/customer/CustomerDrawer.vue'
@@ -53,6 +54,7 @@ import Payment from './views/customer/Payment.vue'
 import Login from './views/auth/Login.vue'
 import ForbiddenView from './views/ForbiddenView.vue'
 import NotFoundView from './views/NotFoundView.vue'
+import OrdersView from './views/staff/OrdersView.vue'
 
 const session = useSessionStore()
 

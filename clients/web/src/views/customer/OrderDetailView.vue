@@ -1,5 +1,5 @@
 <template>
-    <order-empty v-if="viewState?.kind === 'empty'" />
+    <order-empty is-customer v-if="viewState?.kind === 'empty'" />
     <customer-error v-else-if="viewState?.kind === 'error'" />
     <template v-else>
         <v-row class="flex justify-between items-center">
@@ -117,7 +117,7 @@
 
 <script setup lang="ts">
 import CustomerError from '@/components/customer/CustomerError.vue';
-import OrderEmpty from '@/components/customer/OrderEmpty.vue';
+import OrderEmpty from '@/components/OrderEmpty.vue';
 import type { Order, Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';

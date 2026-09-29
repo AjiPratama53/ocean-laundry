@@ -11,8 +11,8 @@
                     search
                 }}"</p>
         </v-col>
-        <v-btn class="bg-cyan-700 text-cyan-50" size="large" prepend-icon="mdi-plus-circle-outline"
-            text="Buat Paket Baru" />
+        <v-btn v-if="isStaff" class="bg-cyan-700 text-cyan-50" size="large" prepend-icon="mdi-plus-circle-outline"
+            text="Buat Paket Baru" @click="$emit('new-package')" />
     </v-card>
 
 </template>
@@ -20,7 +20,10 @@
 <script setup lang="ts">
 defineProps<{
     search: string,
+    isStaff: boolean,
 }>()
+
+defineEmits(['new-package']);
 </script>
 
 <style scoped></style>

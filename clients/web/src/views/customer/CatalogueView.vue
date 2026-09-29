@@ -76,6 +76,9 @@
             </div>
         </v-card>
     </div>
+    <v-row v-if="viewState?.kind === 'content'" class="flex justify-center">
+        <v-pagination :length="4" rounded></v-pagination>
+    </v-row>
 </template>
 
 <script setup lang="ts">
@@ -86,6 +89,7 @@ import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';
 import { usePackageStore } from '@/stores/packageStore';
 import { onMounted, ref, type Ref } from 'vue';
+import { VRow } from 'vuetify/components';
 
 const packages = usePackageStore();
 const search = ref('');

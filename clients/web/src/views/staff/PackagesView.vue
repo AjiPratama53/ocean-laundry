@@ -36,7 +36,7 @@
                 variant="outlined" clearable single-line hide-details />
         </v-card>
 
-        <catalogue-empty v-if="viewState?.kind === 'empty'" :search />
+        <catalogue-empty @new-package="openPackageDialog('new')" is-staff v-if="viewState?.kind === 'empty'" :search />
         <v-card v-else class="p-6 flex flex-col gap-2">
             <div class="flex flex-col gap-4">
                 <div v-for="n in 3" v-if="viewState?.kind === 'loading'" class="flex justify-between">
@@ -57,6 +57,8 @@
                     </div>
                 </div>
             </div>
+
+            <v-pagination v-if="viewState?.kind === 'content'" :length="4" rounded></v-pagination>
             <div class="flex justify-end">
                 <v-btn class="bg-cyan-700 text-cyan-50" :prepend-icon="viewState?.kind === 'content' ? 'mdi-plus' : ''"
                     :text="viewState?.kind === 'content' ? 'Tambah Paket Baru' : ''"

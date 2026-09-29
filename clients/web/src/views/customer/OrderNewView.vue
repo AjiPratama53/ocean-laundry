@@ -52,11 +52,18 @@
                         <v-skeleton-loader type="heading, paragraph, text" width="30rem" />
                     </v-card>
 
-                    <v-card v-else class="flex flex-col p-4 gap-4" v-for="(address, index) in addresses" :key="index">
+                    <v-card v-else class="flex flex-col p-4 gap-4 cursor-pointer transition-all rounded-xl"
+                        v-for="(address, index) in addresses" :key="index"
+                        :class="selectedAddress?.title === address.title ? 'border-2 border-cyan-700 bg-cyan-50' : 'border border-transparent'"
+                        @click="selectAddress(address)">
                         <v-row class="flex justify-between items-center">
-                            <p class="font-bold">{{ address.title }}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold">{{ address.title }}</p>
+                                <v-icon v-if="selectedAddress?.title === address.title" icon="mdi-check-circle"
+                                    class="text-cyan-700" size="small" />
+                            </div>
                             <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Alamat"
-                                class="text-cyan-700" />
+                                class="text-cyan-700" @click.stop />
                         </v-row>
                         <v-col class="max-w-2/3">
                             <p>{{ address.address }}</p>
@@ -124,7 +131,7 @@ const steps: OrderStep[] = [
 const packages = usePackageStore();
 const selectedPackage = packages.getPackageById("pkg_002");
 
-interface Address {
+export interface Address {
     title: string,
     address: string,
     postalCode?: number
@@ -148,7 +155,11 @@ const addresses: Address[] = [
     }
 ]
 
-const selectedAddress: Ref<Address | null> = ref(null);
+const selectedAddress: Ref<Address | null> = ref(addresses[0] ?? null);
+
+function selectAddress(address: Address) {
+    selectedAddress.value = address;
+}
 
 const viewState: Ref<ViewState<Package> | null> = ref(null);
 const isPostingOrder = ref(false);
