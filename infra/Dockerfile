@@ -1,17 +1,14 @@
 FROM quay.io/keycloak/keycloak:26.0 AS builder
 
-# Build configuration options
 ENV KC_DB=postgres
-ENV KC_CACHE=local
 
-# Optimize Keycloak build for these options
 RUN /opt/keycloak/bin/kc.sh build
 
-# Runtime Stage
 FROM quay.io/keycloak/keycloak:26.0
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
-# Copy the realm JSON directly into the runtime image's import folder
+# Copy realm to the import directory
 COPY infra/keycloak/ocean-laundry-realm.json /opt/keycloak/data/import/ocean-laundry-realm.json
 
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized", "--import-realm"]
+# Use start-dev so it does not hang on Infinispan cluster discovery
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm"]
