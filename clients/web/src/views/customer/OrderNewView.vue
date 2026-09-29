@@ -21,6 +21,8 @@
             <v-col v-else>
                 <v-row class="flex items-center justify-between">
                     <p>PAKET YANG DIPILIH</p>
+
+                    <!-- route to catalogue view -->
                     <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Paket" class="text-cyan-700" />
                 </v-row>
                 <v-row class="bg-blue-100 p-4 flex items-center justify-between rounded-xl">
@@ -45,7 +47,7 @@
                         <h3 class="font-bold text-xl">Alamat Penjemputan & Pengantaran</h3>
                     </div>
                     <v-btn variant="text" prepend-icon="mdi-plus-circle-outline" text="Tambah Alamat Baru"
-                        class="text-cyan-700" />
+                        class="text-cyan-700" @click="openAddressDialog('new')" />
                 </v-row>
                 <v-row class="flex gap-4">
                     <v-card v-if="viewState?.kind === 'loading'" v-for="item in 2">
@@ -63,7 +65,8 @@
                                     class="text-cyan-700" size="small" />
                             </div>
                             <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Alamat"
-                                class="text-cyan-700" @click.stop />
+                                class="text-cyan-700" @click.stop @click="openAddressDialog('edit')"
+                                :disabled="address !== selectedAddress" />
                         </v-row>
                         <v-col class="max-w-2/3">
                             <p>{{ address.address }}</p>
@@ -100,10 +103,12 @@
                     Kerusakan</p>
             </span>
         </v-col>
+        <address-dialog v-model="isAddressDialogOpen" :type="addressDialogType" />
     </template>
 </template>
 
 <script setup lang="ts">
+import AddressDialog from '@/components/customer/AddressDialog.vue';
 import CustomerError from '@/components/customer/CustomerError.vue';
 import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
@@ -139,23 +144,23 @@ export interface Address {
     recipient: string
 }
 
-const addresses: Address[] = [
+const addresses = ref<Address[]>([
     {
         title: 'Rumah',
         address: 'Jl. Senopati No. 42, RT 02 / RW 05, Selong, Kebayoran Baru, Jakarta Selatan',
         postalCode: 12110,
-        phone: '+62 812-3456-7890',
+        phone: '0812-3456-7890',
         recipient: 'Siti Aminah'
     },
     {
         title: 'Kantor',
         address: 'Treasury Tower Lt. 18, Kawasan SCBD Sudirman Kav. 52-53, Jakarta Selatan',
-        phone: '+62 811-9876-5432',
+        phone: '0811-9876-5432',
         recipient: 'Resepsionis / Siti'
     }
-]
+])
 
-const selectedAddress: Ref<Address | null> = ref(addresses[0] ?? null);
+const selectedAddress: Ref<Address | null> = ref(addresses.value[0] ?? null);
 
 function selectAddress(address: Address) {
     selectedAddress.value = address;
@@ -163,6 +168,9 @@ function selectAddress(address: Address) {
 
 const viewState: Ref<ViewState<Package> | null> = ref(null);
 const isPostingOrder = ref(false);
+
+const isAddressDialogOpen = ref(false);
+const addressDialogType = ref<'new' | 'edit'>('new');
 
 async function handleNewOrder() {
     isPostingOrder.value = true;
@@ -176,6 +184,11 @@ async function handleNewOrder() {
 
     } finally {
     }
+}
+
+function openAddressDialog(type: 'new' | 'edit') {
+    addressDialogType.value = type;
+    isAddressDialogOpen.value = true;
 }
 
 onMounted(() => {

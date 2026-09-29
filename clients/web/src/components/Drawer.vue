@@ -4,7 +4,17 @@
             <v-list>
                 <v-list-item prepend-avatar="../assets/logo.svg" :title="username" :subtitle="role"></v-list-item>
                 <v-divider></v-divider>
-                <slot />
+                <template v-if="role === 'customer'">
+                    <v-list-item prepend-icon="mdi-archive-outline" link title="Katalog Laundry" />
+                    <v-list-item prepend-icon="mdi-invoice-text-outline" link title="Pesanan Saya" />
+                    <v-list-item prepend-icon="mdi-washing-machine" link title="Tracking & Riwayat" />
+                </template>
+                <template v-else>
+                    <v-list-item prepend-icon="mdi-archive-outline" link title="Daftar Paket Laundry" />
+                    <v-list-item prepend-icon="mdi-washing-machine" link title="Tracking & Riwayat" />
+                    <v-list-item prepend-icon="mdi-tune" link title="Operasional Mesin" />
+
+                </template>
             </v-list>
             <v-list>
                 <v-list-item link prepend-icon="mdi-cog-outline" title="Pengaturan"></v-list-item>
@@ -21,7 +31,7 @@
 <script setup lang="ts">
 defineProps<{
     username: string,
-    role: string
+    role: 'customer' | 'staff'
 }>();
 </script>
 

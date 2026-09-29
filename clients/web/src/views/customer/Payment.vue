@@ -71,7 +71,8 @@
             <div class="flex flex-col gap-2">
                 <div v-for="method in paymentMethods" :key="method.name"
                     class="flex justify-between items-center p-4 rounded-xl cursor-pointer border-2 transition-colors"
-                    :class="selectedPaymentMethod === method.name ? 'bg-cyan-100 border-cyan-700' : 'bg-blue-100 border-transparent'"
+                    :class="selectedPaymentMethod === method.name && viewState?.kind === 'content' ?
+                        'bg-cyan-100 border-cyan-700' : 'bg-blue-100 border-transparent'"
                     @click="selectedPaymentMethod = method.name">
                     <v-skeleton-loader v-if="viewState?.kind === 'loading'" type="avatar, sentences" width="20rem"
                         class="bg-transparent" />
@@ -82,7 +83,8 @@
                             <p class="font-bold">{{ method.name }}</p>
                             <p class="font-light">{{ method.desc }}</p>
                         </v-col>
-                        <v-icon :icon="selectedPaymentMethod === method.name ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                        <v-icon
+                            :icon="selectedPaymentMethod === method.name ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
                             :class="selectedPaymentMethod === method.name ? 'text-cyan-700' : 'text-gray-500'" />
                     </v-row>
                 </div>
