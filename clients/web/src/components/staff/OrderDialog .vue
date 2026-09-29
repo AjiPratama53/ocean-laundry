@@ -168,9 +168,19 @@ async function handleUpdateOrder(): Promise<boolean> {
         return true;
     } catch (e) {
         if (e instanceof ApiError && e.status === 412) {
-            // A.8.2: somebody else wrote first — refresh, re-render, explain.
+            // A.8.2: somebody else wrote first — refresh the individual order so
+            // the dialog re-renders with the *current* status, then explain in
+            // domain terms. Keep the dialog open: the user must see both the
+            // fresh status and the explanation before deciding what to do next.
             formError.value = 'Pesanan ini sudah ditangani rekan — data terbaru dimuat. Periksa status baru sebelum mengulang.';
-            await store.fetchOrders().catch(() => {});
+            // Refresh the individual order so its status card updates in-place.
+            const fresh = await store.fetchOrder(props.order.id, null).catch(() => null);
+            if (fresh && !fresh.notModified && fresh.data) {
+                store.upsert(fresh.data);
+                etag.value = fresh.etag;
+            }
+            // Also refresh the parent list so the queue stays in sync.
+            emit('done');
         } else if (e instanceof ApiError && (e.status === 400 || e.status === 422)) {
             const first = e.problem['invalid-params']?.[0];
             if (first && /weight/i.test(String(first.name))) weightError.value = String(first.reason);

@@ -9,9 +9,9 @@ Sistem pemesanan laundry berbasis platform
 | Peran             | Nama                                        | Tanggung Jawab                                     |
 | ----------------- | ------------------------------------------- | -------------------------------------------------- |
 | Contract owner    | Anders Emmanuel Tan (24/541351/PA/22964)   | Meninjau setiap perubahan openapi.yaml             |
-| Service owner     | Dhimas Early Oceandy (24/533508/PA/22584) | Deploy, konfigurasi, migrasi, health endpoint      |
-| Client owner      | Muhammad Dzaky Ar Rasyid (24/543165/PA/23067)  | Klien pengguna, pelaporan ambiguitas kontrak       |
-| Integration owner | Pratama Nanindra Aji (24/533677/PA/22604) | Mock server, contract test, koordinasi Pertemuan 7 |
+| Service owner     | Muhammad Dzaky Ar Rasyid (24/543165/PA/23067)| Deploy, konfigurasi, migrasi, health endpoint      |
+| Client owner      | Pratama Nanindra Aji (24/533677/PA/22604) | Klien pengguna, pelaporan ambiguitas kontrak       |
+| Integration owner | Dhimas Early Oceandy (24/533508/PA/22584)  | Mock server, contract test, koordinasi Pertemuan 7 |
 
 ## Planned Clients & Constraints
 
