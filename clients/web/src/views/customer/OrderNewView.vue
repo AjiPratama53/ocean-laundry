@@ -50,23 +50,23 @@
                         class="text-cyan-700" @click="openAddressDialog('new')" />
                 </v-row>
                 <v-row class="flex gap-4">
-                    <v-card v-if="viewState?.kind === 'loading'" v-for="item in 2">
+                    <v-card class="flex-1" v-if="viewState?.kind === 'loading'" v-for="item in 2">
                         <v-skeleton-loader type="heading, paragraph, text" width="30rem" />
                     </v-card>
 
                     <v-card v-else class="flex flex-col p-4 gap-4 cursor-pointer transition-all rounded-xl"
                         v-for="(address, index) in addresses" :key="index"
-                        :class="selectedAddress?.title === address.title ? 'border-2 border-cyan-700 bg-cyan-50' : 'border border-transparent'"
+                        :class="`flex-1 ${selectedAddress === address ? 'border-2 border-cyan-700 bg-cyan-50' : 'border border-transparent'}`"
                         @click="selectAddress(address)">
                         <v-row class="flex justify-between items-center">
                             <div class="flex items-center gap-2">
                                 <p class="font-bold">{{ address.title }}</p>
-                                <v-icon v-if="selectedAddress?.title === address.title" icon="mdi-check-circle"
-                                    class="text-cyan-700" size="small" />
+                                <v-icon v-if="selectedAddress === address" icon="mdi-check-circle" class="text-cyan-700"
+                                    size="small" />
                             </div>
                             <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Alamat"
-                                class="text-cyan-700" @click.stop @click="openAddressDialog('edit')"
-                                :disabled="address !== selectedAddress" />
+                                class="text-cyan-700" @click.stop="openAddressDialog('edit')"
+                                :disabled="selectedAddress !== address" />
                         </v-row>
                         <v-col class="max-w-2/3">
                             <p>{{ address.address }}</p>
@@ -97,13 +97,14 @@
                 :prepend-icon="viewState?.kind === 'content' ? 'mdi-lock-outline' : ''" size="x-large"
                 :text="viewState?.kind === 'content' ? 'Konfirmasi & Buat Pesanan' : ''"
                 :disabled="viewState?.kind !== 'content'" :loading="isPostingOrder" @click="handleNewOrder" />
-            <span v-if="viewState?.kind === 'content'"" class=" flex gap-1 items-center">
+            <span v-if="viewState?.kind === 'content'" class=" flex gap-1 items-center">
                 <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
                 <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
                     Kerusakan</p>
             </span>
         </v-col>
-        <address-dialog v-model="isAddressDialogOpen" :type="addressDialogType" />
+        <address-dialog v-model="isAddressDialogOpen" :type="addressDialogType"
+            :selected-address="selectedAddress" />
     </template>
 </template>
 
@@ -114,7 +115,7 @@ import type { Package } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import type { ViewState } from '@/lib/viewState';
 import { usePackageStore } from '@/stores/packageStore';
-import { type Ref, ref, onMounted, watch } from 'vue';
+import { type Ref, ref, onMounted } from 'vue';
 
 interface OrderStep {
     step: string,
@@ -137,22 +138,23 @@ const packages = usePackageStore();
 const selectedPackage = packages.getPackageById("pkg_002");
 
 export interface Address {
+    id: string,
     title: string,
     address: string,
-    postalCode?: number
     phone: string,
     recipient: string
 }
 
 const addresses = ref<Address[]>([
     {
+        id: 'adr_001',
         title: 'Rumah',
         address: 'Jl. Senopati No. 42, RT 02 / RW 05, Selong, Kebayoran Baru, Jakarta Selatan',
-        postalCode: 12110,
         phone: '0812-3456-7890',
         recipient: 'Siti Aminah'
     },
     {
+        id: 'adr_002',
         title: 'Kantor',
         address: 'Treasury Tower Lt. 18, Kawasan SCBD Sudirman Kav. 52-53, Jakarta Selatan',
         phone: '0811-9876-5432',
@@ -160,7 +162,7 @@ const addresses = ref<Address[]>([
     }
 ])
 
-const selectedAddress: Ref<Address | null> = ref(addresses.value[0] ?? null);
+const selectedAddress: Ref<Address | undefined> = ref(addresses.value[0]);
 
 function selectAddress(address: Address) {
     selectedAddress.value = address;
@@ -188,6 +190,9 @@ async function handleNewOrder() {
 
 function openAddressDialog(type: 'new' | 'edit') {
     addressDialogType.value = type;
+    if (type === 'new') {
+        selectedAddress.value = undefined;
+    }
     isAddressDialogOpen.value = true;
 }
 

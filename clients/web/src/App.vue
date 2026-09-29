@@ -23,7 +23,7 @@
         <v-col class="flex flex-col gap-8">
           <!-- Customer -->
           <!-- <catalogue-view /> -->
-          <!-- <order-new-view /> -->
+          <order-new-view />
           <!-- <order-detail-view /> -->
           <!-- <payment /> -->
 
@@ -31,7 +31,7 @@
           <!-- <packages-view /> -->
           <!-- <orders-view /> -->
 
-          <login />
+          <!-- <login /> -->
           <!-- <forbidden-view /> -->
           <!-- <not-found-view /> -->
         </v-col>

@@ -71,6 +71,8 @@
                         {{ servicePackage.description }}
                     </p>
                 </span>
+
+                <!-- Redirect to new order with selected package -->
                 <v-btn class="bg-cyan-700 text-blue-50" text="Pilih Paket & Pesan" block size="x-large"
                     append-icon="mdi-cart-plus" />
             </div>

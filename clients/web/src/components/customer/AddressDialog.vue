@@ -16,30 +16,30 @@
                         <p>{{ type === 'new' ?
                             'Lengkapi data alamat untuk menambah alamat baru' :
                             'Ubah data alamat'
-                            }}</p>
+                        }}</p>
                     </div>
                 </div>
                 <div class="flex flex-col p-8 gap-6">
                     <div class="flex flex-col gap-1">
                         <h3 class="font-bold">Nama Alamat</h3>
                         <v-text-field placeholder="contoh: Rumah, Kantor" variant="solo" clearable single-line
-                            hide-details />
+                            hide-details v-model="inputAddress.title" />
                     </div>
                     <div class="flex flex-col gap-1">
                         <h3 class="font-bold">Alamat</h3>
                         <v-text-field placeholder="Jl. XXXX No. XX, RT XX / RW XX, Kelurahan, Kecamatan, Kab/Kota"
-                            variant="solo" clearable single-line hide-details />
+                            variant="solo" clearable single-line hide-details v-model="inputAddress.address" />
                     </div>
                     <v-row class="flex justify-between">
                         <div class="flex-1 flex flex-col gap-1">
                             <h3 class="font-bold">No. Telepon</h3>
-                            <v-text-field placeholder="0812-3456-7890" variant="solo" clearable single-line
-                                hide-details />
+                            <v-text-field placeholder="0812-3456-7890" variant="solo" clearable single-line hide-details
+                                v-model="inputAddress.phone" />
                         </div>
                         <div class="flex-1 flex flex-col gap-1">
                             <h3 class="font-bold">Penerima</h3>
                             <v-text-field placeholder="contoh: Resepsionis, Satpam, Nama penerima" variant="solo"
-                                clearable single-line hide-details />
+                                clearable single-line hide-details v-model="inputAddress.recipient" />
                         </div>
                     </v-row>
                     <div class="flex flex-row-reverse justify-between">
@@ -62,14 +62,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import type { Address } from '@/views/customer/OrderNewView.vue';
+import { onMounted, ref } from 'vue';
 
-defineProps<{
-    type: 'new' | 'edit'
+const props = defineProps<{
+    type: 'new' | 'edit',
+    selectedAddress: Address | undefined
 }>()
 
 const isOpen = defineModel<boolean>({ default: false })
 const isPostingAddress = ref(false);
+
+const inputAddress = ref<Address>(props.selectedAddress ?? {
+    id: `adr_${globalThis.crypto.randomUUID()}`,
+    title: '',
+    address: '',
+    phone: '',
+    recipient: ''
+})
 
 async function handleNewAddress() {
     isPostingAddress.value = true;
@@ -98,6 +108,12 @@ async function handleDeleteAddress() {
         isPostingAddress.value = false;
     }
 }
+
+onMounted(() => {
+    if (props.selectedAddress) {
+        inputAddress.value = props.selectedAddress;
+    }
+})
 
 </script>
 
