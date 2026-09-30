@@ -37,7 +37,7 @@ export async function findPackages(params: {
       SELECT * 
       FROM packages 
       ${where} 
-      ORDER BY id ASC 
+      ORDER BY price ASC 
       LIMIT $${values.length}
     `,
     values,
