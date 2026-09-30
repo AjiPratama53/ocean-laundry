@@ -7,10 +7,9 @@
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
-    "build-only": "vite build && cp dist/index.html dist/404.html",
+    "build-only": "vite build",
     "type-check": "vue-tsc --build --force"
   },
-  ,
   "dependencies": {
     "@fontsource/roboto": "^5.2.10",
     "@fontsource/roboto-mono": "^5.2.8",
