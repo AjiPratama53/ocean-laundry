@@ -29,6 +29,7 @@ jobs:
         run: |
           mkdir -p .vercel
           echo "{\"projectId\":\"${VERCEL_PROJECT_ID}\",\"orgId\":\"${VERCEL_ORG_ID}\"}" > .vercel/project.json
+          echo "VERCEL_TOKEN=${VERCEL_TOKEN}" > .env.local
           vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
       - name: Build Project Artifacts
