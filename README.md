@@ -70,7 +70,8 @@ maks (GET entity + GET paket untuk nama). Token dilampirkan di satu tempat
 
 Aplikasi telah dideploy dan dapat diakses publik pada:
 - **Web Application URL:** https://ocean-laundry-eosin.vercel.app/
-- **Backend API Base URL:** https://ocean-laundry-eosin.vercel.app/v1
+- **Backend API Base URL:** kend: ocean-laundry-backend-production.up.railway.app/
+- **Keycloak URL:** https://ocean-laundry-production.up.railway.app/
 
 ## Catatan Penyimpanan Sesi (A.3 butir 5)
 
