@@ -59,7 +59,7 @@
         <div v-if="viewState.kind === 'loading'" class="grid grid-cols-3 gap-6">
             <v-skeleton-loader v-for="n in 3" :key="n" type="heading, paragraph, button" class="p-6" />
         </div>
-        <catalogue-empty v-else-if="viewState.kind === 'empty'" :search="search" :is-staff="false" />
+        <catalogue-empty v-else-if="viewState.kind === 'empty'" :search="search" :can-manage="canManage" />
         <customer-error v-else-if="viewState.kind === 'error'" :problem="store.lastError" :status="store.lastStatus"
             @retry="load" />
         <div v-else class="grid grid-cols-3 gap-6">
@@ -83,7 +83,7 @@
 
                     <!-- One URL per workflow (A.2.1): order form deep-links the package -->
                     <v-btn class="bg-cyan-700 text-blue-50" text="Pilih Paket & Pesan" block size="x-large"
-                        append-icon="mdi-cart-plus" :to="`/customer/orders/new?packageId=${servicePackage.id}`" />
+                        append-icon="mdi-cart-plus" :to="`/orders/new?packageId=${servicePackage.id}`" />
                 </div>
             </v-card>
         </div>
@@ -96,10 +96,15 @@ import CustomerError from '@/components/customer/CustomerError.vue';
 import { ApiError } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import { usePackageStore } from '@/stores/packageStore';
+import { useSessionStore } from '@/stores/session';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const store = usePackageStore();
+const session = useSessionStore();
 const search = ref('');
+
+// Write CTA only for tokens that may manage packages (packages:write).
+const canManage = computed(() => session.scopes.includes('packages:write'));
 
 type ViewKind = 'loading' | 'empty' | 'error' | 'content';
 const viewState = ref<{ kind: ViewKind }>({ kind: 'loading' });

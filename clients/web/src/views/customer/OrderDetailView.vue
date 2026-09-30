@@ -1,27 +1,27 @@
 <template>
-    <order-empty is-customer v-if="viewState.kind === 'empty'" />
+    <order-empty :can-order="canCancel" v-if="viewState.kind === 'empty'" />
     <customer-error v-else-if="viewState.kind === 'error'" :problem="problem" :status="status" @retry="load" />
     <v-col v-else class="flex flex-col gap-4">
-        <v-row class="flex justify-between items-center">
+        <v-row class="flex items-center justify-between">
             <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text, heading, subtitle" width="30rem"
                 class="bg-transparent" />
-            <v-col v-else>
+            <v-col v-else class="flex flex-1 flex-col">
                 <p class="text-cyan-700">
                     <span>
                         <v-icon icon="mdi-circle-small" />
                     </span>
                     PELACAKAN REAL-TIME
                 </p>
-                <h1 class="font-bold text-4xl">Order #{{ order?.id.slice(0, 8) }}</h1>
+                <h1 class="font-bold text-4xl">Order #{{ order?.id }}</h1>
                 <p v-if="stale" class="text-amber-700 text-sm">Data per {{ fetchedAt?.toLocaleTimeString() }} —
                     menyambung ulang…</p>
             </v-col>
             <v-skeleton-loader v-if="viewState.kind === 'loading'" type="button" width="30rem"
                 class=" bg-transparent justify-end" />
-            <v-row v-else class="flex gap-2 justify-end">
+            <v-row v-else class="flex flex-1 justify-end">
                 <v-btn prepend-icon="mdi-refresh" text="Refresh" @click="load" :loading="refreshing" />
                 <v-btn v-if="canPay && order?.status === 'awaiting_payment'" color="primary"
-                    :to="`/customer/payments/new?orderId=${order?.id}`" text="Bayar" />
+                    :to="`/payments/new?orderId=${order?.id}`" text="Bayar" />
             </v-row>
         </v-row>
         <v-card class="p-6 flex justify-between items-center">
@@ -74,15 +74,9 @@
                 </template>
             </v-col>
             <v-divider />
-            <!-- Customer-only actions. Staff/courier status work happens
-                     in the queue dialog (/staff/orders → Update); this screen
-                     never mutates status — only cancel (orders:write). -->
-            <v-row v-if="viewState.kind === 'content'" class="flex gap-2">
-                <v-btn v-if="canCancel && order && ['placed', 'picked_up'].includes(order.status)"
-                    class="bg-red-300 text-red-700" :disabled="acting" :loading="acting" @click="doCancel"
-                    text="Batalkan" />
-                <p v-else>Pesanan tidak dapat dibatalkan dalam status ini.</p>
-            </v-row>
+            <!-- Scope-gated actions (UX only, A.2.2 — service enforces, see A.9):
+                      cancel needs orders:write; update needs orders:fulfil
+                      or deliveries:write depending on status. -->
             <v-alert v-if="actionNote" type="warning" variant="tonal" density="compact">{{ actionNote }}</v-alert>
         </v-card>
         <template v-if="viewState.kind === 'content'">
@@ -96,13 +90,31 @@
                     <p>{{ assurance }}</p>
                 </span>
             </v-card>
+            <v-row class="flex flex-col gap-2">
+                <v-btn v-if="showCancel" class="bg-red-300 text-red-700" :disabled="acting" @click="isCancelOpen = true"
+                    block size="x-large" text="Batalkan Pesanan" />
+                <v-btn v-if="canUpdateForStatus" class="bg-cyan-700 text-cyan-50" @click="isUpdateOpen = true" block
+                    size="x-large" text="Update Status" prepend-icon="mdi-check" />
+                <p v-if="!showCancel && !canUpdateForStatus">
+                    Tidak ada aksi yang tersedia untuk akun ini dalam status ini.</p>
+            </v-row>
         </template>
+        <!-- Critical action (A.6.4): cancel order asks for confirmation first,
+                 same generic dialog as delete package. doCancel maps service
+                 refusals (412/403/...) to domain terms in actionNote. -->
+        <delete-dialog v-model="isCancelOpen" title="Batalkan Pesanan"
+            message="Batalkan pesanan ini? Pesanan yang dibatalkan tidak dapat dikembalikan."
+            confirm-text="Ya, Batalkan" cancel-text="Kembali" :action="doCancel" v-if="showCancel" />
+        <order-dialog v-if="order && canUpdateForStatus" v-model="isUpdateOpen" :order="order ?? undefined"
+            :package="pkg" @done="load" />
     </v-col>
 </template>
 
 <script setup lang="ts">
 import CustomerError from '@/components/customer/CustomerError.vue';
 import OrderEmpty from '@/components/OrderEmpty.vue';
+import DeleteDialog from '@/components/staff/DeleteDialog.vue';
+import OrderDialog from '@/components/staff/OrderDialog .vue';
 import { ApiError, getPackageConditional, type Order, type OrderStatus, type Package, type Problem } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import { useOrderStore } from '@/stores/orderStore';
@@ -131,6 +143,8 @@ const stale = ref(false);
 const refreshing = ref(false);
 const acting = ref(false);
 const actionNote = ref<string | null>(null);
+const isCancelOpen = ref(false);
+const isUpdateOpen = ref(false);
 
 const orderStatusKey: Record<OrderStatus, string> = {
     'placed': 'Dibuat',
@@ -144,10 +158,27 @@ const orderStatusKey: Record<OrderStatus, string> = {
     'cancelled': 'Dibatalkan'
 }
 
-// Customer-only screen: pay + cancel. Status transitions (weigh/wash/
-// ready/pickup/delivery/complete) live in the staff queue dialog.
+// Scope-gated actions (UX only, A.2.2 — service enforces):
+// cancel needs orders:write; update needs orders:fulfil (weigh/wash
+// steps) or deliveries:write (pickup/delivery steps) per status —
+// sama seperti OrderDialog. No role checks: the token scopes decide.
 const canPay = computed(() => session.scopes.includes('payments:write'));
 const canCancel = computed(() => session.scopes.includes('orders:write'));
+const showCancel = computed(() =>
+    canCancel.value && order.value != null && ['placed', 'picked_up'].includes(order.value.status),
+);
+const canUpdateForStatus = computed(() => {
+    if (!order.value) return false;
+    const s = new Set(session.scopes);
+    switch (order.value.status) {
+        case 'picked_up':
+        case 'washing': return s.has('orders:fulfil');
+        case 'placed':
+        case 'ready':
+        case 'delivering': return s.has('deliveries:write');
+        default: return false;
+    }
+});
 
 function id(): string {
     return String(route.params.id ?? '');
@@ -204,7 +235,9 @@ async function load() {
 }
 
 /** Cancel with If-Match (A.8): a 412 means somebody else wrote first —
- * refresh, re-render, explain in domain terms (A.8.2). */
+ * refresh, re-render, explain in domain terms (A.8.2). Resolves once the
+ * outcome is handled so the confirmation dialog closes; the outcome
+ * itself is reported via actionNote + refreshed content. */
 async function doCancel() {
     if (!order.value) return;
     acting.value = true;
@@ -218,6 +251,8 @@ async function doCancel() {
             await load();
         } else if (e instanceof ApiError) {
             actionNote.value = e.problem.detail;
+        } else {
+            actionNote.value = 'Pembatalan gagal. Coba lagi.';
         }
     } finally {
         acting.value = false;

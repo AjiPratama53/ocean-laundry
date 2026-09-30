@@ -53,7 +53,7 @@
                                 @click="handleSave().then((ok) => { if (ok) isActive.value = false })" />
                         </div>
                         <delete-dialog v-if="type === 'edit'" title="Hapus Paket" button-text="Hapus Paket"
-                            :action="handleDelete" />
+                            message="Hapus paket ini?" confirm-text="Hapus" :action="handleDelete" />
                     </div>
                 </div>
             </v-card>

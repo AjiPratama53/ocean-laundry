@@ -11,16 +11,18 @@
                     search
                 }}"</p>
         </v-col>
-        <v-btn v-if="isStaff" class="bg-cyan-700 text-cyan-50" size="large" prepend-icon="mdi-plus-circle-outline"
+        <v-btn v-if="canManage" class="bg-cyan-700 text-cyan-50" size="large" prepend-icon="mdi-plus-circle-outline"
             text="Buat Paket Baru" @click="$emit('new-package')" />
     </v-card>
 
 </template>
 
 <script setup lang="ts">
+/** canManage mirrors the write guard (packages:write): show the
+ * "create package" CTA only to tokens that may manage packages. */
 defineProps<{
     search: string,
-    isStaff: boolean,
+    canManage: boolean,
 }>()
 
 defineEmits(['new-package']);

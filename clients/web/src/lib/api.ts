@@ -136,6 +136,14 @@ export class AuthError extends Error {
   }
 }
 
+/**
+ * Domain scopes requested at sign-in. The client asks for the full set;
+ * the IdP grants what the account is allowed (Keycloak drops scopes the
+ * user may not have), so the token — and every scope-gated button, menu,
+ * and route guard — reflects the account's actual access. No role concept
+ * lives in the client: all access decisions are scope checks (UX only,
+ * the service enforces per endpoint).
+ */
 const DOMAIN_SCOPES = [
   "packages:read",
   "packages:write",

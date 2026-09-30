@@ -22,7 +22,7 @@
                 <v-row class="flex items-center justify-between">
                     <p>PAKET YANG DIPILIH</p>
                     <v-btn variant="text" prepend-icon="mdi-pencil-outline" text="Ubah Paket" class="text-cyan-700"
-                        to="/customer/catalogue" />
+                        to="/catalogue" />
                 </v-row>
                 <v-row class="bg-blue-100 p-4 flex items-center justify-between rounded-xl">
                     <v-col>
@@ -268,7 +268,7 @@ async function handleNewOrder() {
             idempotencyKey.value,
         );
         // Deep-linkable result (A.2.1): land on the new order's own URL.
-        await router.push(`/customer/orders/${order.id}`);
+        await router.push(`/orders/${order.id}`);
     } catch (e) {
         if (e instanceof ApiError && (e.status === 400 || e.status === 422)) {
             // A.6.1: invalid fields land on their fields, in domain terms.

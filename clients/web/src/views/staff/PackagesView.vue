@@ -37,15 +37,12 @@
                 variant="outlined" clearable single-line hide-details />
         </v-card>
 
-        <catalogue-empty v-if="viewState.kind === 'empty'" :search="search" is-staff
+        <catalogue-empty v-if="viewState.kind === 'empty'" :search="search" :can-manage="canWrite"
             @new-package="openPackageDialog('new')" />
         <template v-else>
-            <!-- 403-as-UX (A.3.2): signed in but without packages:write the list
-                     is read-only. Say so plainly instead of hiding every affordance
-                     with no explanation; signing in again changes nothing. -->
-            <v-alert v-if="!canWrite && session.isSignedIn" type="info" variant="tonal" density="compact" class="mb-2">
-                Akun ini hanya bisa melihat paket — pengelolaan (tambah/ubah/hapus) butuh hak staff.
-            </v-alert>
+            <!-- Staff-only route (guard: packages:write). Write controls di bawah
+                      tetap scope-gated UX lapis-2; service menolak 403 bila dipaksa
+                      via console (A.9). -->
             <v-card class="p-6 flex flex-col gap-2">
                 <p v-if="store.stale" class="text-amber-700 text-sm">Data per {{
                     store.fetchedAt?.toLocaleTimeString() }} — menyambung ulang… {{ store.staleNote }}</p>
@@ -101,7 +98,7 @@ const isPackageDialogOpen = ref(false);
 const packageDialogType = ref<'new' | 'edit'>('new');
 const editingId = ref<string | null>(null);
 
-// Scope watch (A.2.2/A.3): staff write UI only with packages:write.
+// Scope check (A.2.2/A.3): write UI only with packages:write.
 const canWrite = computed(() => session.scopes.includes('packages:write'));
 
 function openPackageDialog(type: 'new' | 'edit', id?: string) {

@@ -23,26 +23,11 @@ function decodePayload(token: string): Record<string, unknown> | null {
 }
 
 /**
- * Single source of truth for role-separated navigation (drawer menu +
- * post-login landing). Precedence staff > courier > customer; a signed-in
- * account whose token carries no domain scope is 'unassigned' — never
- * silently shown the customer menu.
+ * Session store: identity (username/subject) + granted scopes decoded
+ * from the access token. There is no role concept here on purpose — all
+ * access decisions in the client are scope checks (route guards, buttons,
+ * menus), UX only; the service is the sole enforcer.
  */
-export type MenuRole = "staff" | "courier" | "customer" | "anonymous" | "unassigned";
-
-/** Post-login landing per role: customer → catalogue, staff → order list. */
-export function landingForMenu(menu: MenuRole): string {
-  switch (menu) {
-    case "staff":
-      return "/staff/orders";
-    case "courier":
-      return "/courier/pickups";
-    case "customer":
-      return "/customer/catalogue";
-    default:
-      return "/";
-  }
-}
 
 export const useSessionStore = defineStore("session", () => {
   const router = useRouter();
@@ -68,35 +53,23 @@ export const useSessionStore = defineStore("session", () => {
     token.value ? decodePayload(token.value) : null,
   );
   const subject = computed(() => String(claims.value?.sub ?? ""));
+  /** Display name from the IdP token (profile scope is a default client
+   * scope, so preferred_username is always present). Falls back to sub. */
+  const username = computed(
+    () =>
+      String(
+        claims.value?.preferred_username ??
+          claims.value?.name ??
+          claims.value?.nickname ??
+          claims.value?.sub ??
+          "",
+      ),
+  );
   const scopes = computed(() =>
     String(claims.value?.scope ?? "")
       .split(" ")
       .filter(Boolean),
   );
-
-  /** Role is UX only (A.2.2) — the service remains the sole enforcer.
-   * Order defines precedence (staff > courier > customer): an account
-   * holding several scopes navigates as its most privileged role, and
-   * primaryRole agrees with the drawer branch order. */
-  const roles = computed(() => {
-    const s = new Set(scopes.value);
-    const r: string[] = [];
-    if (s.has("orders:fulfil") || s.has("packages:write")) r.push("staff");
-    if (s.has("deliveries:write")) r.push("courier");
-    if (s.has("orders:write") || s.has("payments:write")) r.push("customer");
-    return r;
-  });
-  const primaryRole = computed(
-    () => roles.value[0] ?? (isSignedIn.value ? "unassigned" : "anonymous"),
-  );
-
-  const activeMenu = computed<MenuRole>(() => {
-    if (!isSignedIn.value) return "anonymous";
-    if (roles.value.includes("staff")) return "staff";
-    if (roles.value.includes("courier")) return "courier";
-    if (roles.value.includes("customer")) return "customer";
-    return "unassigned";
-  });
 
   /** Expiry seen locally (the service verdict on 401 still wins). */
   const expiresAt = computed(() => {
@@ -112,10 +85,9 @@ export const useSessionStore = defineStore("session", () => {
     return passwordGrant(username.trim(), password).then((t) => {
       writeSession(t.access_token, t.refresh_token);
       token.value = t.access_token;
-      // Role-aware landing (A.2.2): an explicit ?redirect= from the guard
-      // wins; otherwise the shared activeMenu → landing map decides.
-      const dest =
-        redirect && redirect !== "/" ? redirect : landingForMenu(activeMenu.value);
+      // An explicit ?redirect= from the guard wins; otherwise home,
+      // which links every workflow the token can open.
+      const dest = redirect && redirect !== "/" ? redirect : "/";
       router.push(dest).catch(() => {});
     });
   }
@@ -137,10 +109,8 @@ export const useSessionStore = defineStore("session", () => {
     isSignedIn,
     claims,
     subject,
+    username,
     scopes,
-    roles,
-    primaryRole,
-    activeMenu,
     expiresAt,
     load,
     loginWithPassword,

@@ -17,15 +17,11 @@ import {
 
 /**
  * One URL per workflow (A.2.1): detail lives at /orders/:id and
- * /customer/orders/:id, never in a selectedOrder variable — deep-linkable,
- * bookmarkable, reload-safe.
+ * /payments/:id — deep-linkable, bookmarkable, reload-safe.
  *
- * Role separation (A.2.2 — navigation UX only, service enforces, see A.9):
- * - customer/* : catalogue → create order → pay → track own orders.
- * - staff/*     : manage packages, fulfil queues (weigh/wash/ready).
- * - courier/*   : pickup / delivery queues (deliveries:write).
- * Generic /packages, /orders, /orders/:id, /payments/* remain as
- * shareable deep-links and redirect into the role namespaces.
+ * Access is scope-gated UX only (A.2.2 — the service enforces, see A.9):
+ * every route declares the scopes a token needs; buttons inside the
+ * screens check the same scopes. No role concept lives in the client.
  *
  * Scope map (from openapi.yaml security scopes):
  * - customer: packages:read, orders:read, orders:write, payments:read/write
@@ -46,6 +42,70 @@ declare module "vue-router" {
   }
 }
 
+/**
+ * Menu drawer (scope-filtered, UX only — the service enforces, see A.9).
+ * Each item mirrors the guard of the route it points to (keep
+ * `requiredAnyScopes` in sync with the route below): only pages the
+ * token can actually open are shown, so a menu entry never leads to
+ * /forbidden.
+ */
+export interface NavItem {
+  title: string;
+  icon: string;
+  to: string;
+  requiredAnyScopes: string[];
+}
+
+export const NAV_ITEMS: NavItem[] = [
+  {
+    title: "Daftar Paket Laundry",
+    icon: "mdi-archive-outline",
+    to: "/packages",
+    requiredAnyScopes: ["packages:write"],
+  },
+  {
+    title: "Tracking & Riwayat",
+    icon: "mdi-washing-machine",
+    to: "/orders",
+    requiredAnyScopes: ["orders:fulfil"],
+  },
+  {
+    title: "Penjemputan",
+    icon: "mdi-truck",
+    to: "/pickups",
+    requiredAnyScopes: ["orders:read", "deliveries:write"],
+  },
+  {
+    title: "Pengantaran",
+    icon: "mdi-package-variant-closed",
+    to: "/deliveries",
+    requiredAnyScopes: ["deliveries:write"],
+  },
+  {
+    title: "Katalog Laundry",
+    icon: "mdi-archive-outline",
+    to: "/catalogue",
+    requiredAnyScopes: ["orders:write"],
+  },
+  {
+    title: "Pesanan Saya",
+    icon: "mdi-invoice-text-outline",
+    to: "/orders",
+    requiredAnyScopes: [
+      "orders:read",
+      "orders:write",
+      "orders:fulfil",
+      "deliveries:write",
+    ],
+  },
+  {
+    title: "Buat Order",
+    icon: "mdi-cart-plus",
+    to: "/orders/new",
+    requiredAnyScopes: ["orders:write"],
+  },
+];
+
 const routes: RouteRecordRaw[] = [
   { path: "/", name: "home", component: Home },
   {
@@ -54,39 +114,29 @@ const routes: RouteRecordRaw[] = [
     component: Login,
   },
 
-  /* ---------------- Customer namespace (customer scope) ---------------- */
+  /* ---------------- Catalogue, order & payment (order/payment scopes) ---------------- */
   {
-    path: "/customer/catalogue",
-    name: "customer-catalogue",
+    path: "/catalogue",
+    name: "catalogue",
     component: CatalogueView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["packages:read"] },
+    // packages:read is held by several scope sets, so the guard uses
+    // orders:write (the scope that may place orders from the catalogue).
+    meta: { requiresAuth: true, requiredAnyScopes: ["orders:write"] },
   },
   {
-    path: "/customer/orders",
-    name: "customer-orders",
-    component: OrdersView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["orders:read"] },
-  },
-  {
-    path: "/customer/orders/new",
+    path: "/orders/new",
     name: "customer-order-new",
     component: OrderNewView,
     meta: { requiresAuth: true, requiredAnyScopes: ["orders:write"] },
   },
   {
-    path: "/customer/orders/:id",
-    name: "customer-order-detail",
-    component: OrderDetailView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["orders:read"] },
-  },
-  {
-    path: "/customer/payments/new",
+    path: "/payments/new",
     name: "customer-payment-new",
     component: PaymentView,
     meta: { requiresAuth: true, requiredAnyScopes: ["payments:write"] },
   },
   {
-    path: "/customer/payments/:id",
+    path: "/payments/:id",
     name: "customer-payment-detail",
     component: PaymentDetailView,
     meta: {
@@ -95,82 +145,70 @@ const routes: RouteRecordRaw[] = [
     },
   },
 
-  /* ---------------- Staff namespace (staff scope) ---------------- */
-  {
-    path: "/staff/packages",
-    name: "staff-packages",
-    component: PackagesView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["packages:read"] },
-  },
-  {
-    path: "/staff/orders",
-    name: "staff-orders",
-    component: OrdersView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["orders:read"] },
-  },
-  // Staff work status through the queue dialog (OrdersView → Update),
-  // never a detail page: OrderDetailView is customer-only (track/pay/cancel).
-  {
-    path: "/staff/orders/:id",
-    redirect: "/staff/orders",
-  },
-
-  /* ---------------- Courier namespace (courier scope) ---------------- */
-  {
-    path: "/courier/pickups",
-    name: "courier-pickups",
-    component: OrdersView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["orders:read"] },
-  },
-  {
-    path: "/courier/deliveries",
-    name: "courier-deliveries",
-    component: OrdersView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["orders:read"] },
-  },
-
-  /* ---------------- Generic deep-links (shareable, reload-safe) -------- */
-  // Catalogue read is shared; write form inside is scope-gated UX only.
+  /* ---------------- Packages & order queue (package/fulfil scopes) ---------------- */
+  // Package management needs packages:write. Tokens with only
+  // packages:read are sent to /forbidden via the guard below.
   {
     path: "/packages",
     name: "packages",
-    component: CatalogueView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["packages:read"] },
+    component: PackagesView,
+    meta: {
+      requiresAuth: true,
+      requiredAnyScopes: ["packages:write"],
+    },
   },
-  // "Pesanan Saya" — service filters by ownership; foreign object -> 404.
+  // Shared order list: service filters by ownership for customers,
+  // fulfilment filters via ?status=. Guard matches openapi GET /orders
+  // (orders:read); orders:fulfil and deliveries:write are included so
+  // tokens without a separate read scope land here instead of /forbidden.
   {
     path: "/orders",
-    name: "orders",
+    name: "staff-orders",
     component: OrdersView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["orders:read"] },
+    meta: {
+      requiresAuth: true,
+      requiredAnyScopes: ["orders:read", "orders:fulfil", "deliveries:write"],
+    },
+  },
+
+  /* ---------------- Pickup & delivery queues (delivery scopes) ---------------- */
+  {
+    path: "/pickups",
+    name: "courier-pickups",
+    component: OrdersView,
+    meta: {
+      requiresAuth: true,
+      requiredAnyScopes: ["orders:read", "deliveries:write"],
+    },
   },
   {
-    path: "/orders/new",
-    redirect: "/customer/orders/new",
+    path: "/deliveries",
+    name: "courier-deliveries",
+    component: OrdersView,
+    meta: {
+      requiresAuth: true,
+      requiredAnyScopes: ["deliveries:write"],
+    },
   },
+
   // Shared detail: action buttons inside are scope-gated UX only
   // (deliveries:write = pickup/delivery/complete, orders:fulfil =
   // weigh/wash/ready, orders:write = cancel, payments:write = pay).
+  // Guard mirrors GET /orders/{id} (orders:read) plus fulfil/write/
+  // deliveries:write so scoped tokens land here instead of /forbidden —
+  // the service still filters by ownership (foreign object -> 404).
   {
     path: "/orders/:id",
     name: "order-detail",
     component: OrderDetailView,
-    meta: { requiresAuth: true, requiredAnyScopes: ["orders:read"] },
-  },
-  {
-    path: "/payments/new",
-    redirect: (to) => ({
-      path: "/customer/payments/new",
-      query: to.query,
-    }),
-  },
-  {
-    path: "/payments/:id",
-    name: "payment-detail",
-    component: PaymentDetailView,
     meta: {
       requiresAuth: true,
-      requiredAnyScopes: ["payments:read", "payments:write"],
+      requiredAnyScopes: [
+        "orders:read",
+        "orders:write",
+        "orders:fulfil",
+        "deliveries:write",
+      ],
     },
   },
   {

@@ -41,11 +41,11 @@
             </template>
         </v-card>
 
-        <order-empty v-if="viewState.kind === 'empty'" :is-customer="isCustomerView" />
+        <order-empty v-if="viewState.kind === 'empty'" :can-order="canOrder" />
         <v-card v-else class="p-6 flex flex-col gap-2">
             <p v-if="store.stale" class="text-amber-700 text-sm">Menampilkan data per {{
                 store.fetchedAt?.toLocaleTimeString()
-            }}. Menyambung ulang… {{ store.staleNote }}</p>
+                }}. Menyambung ulang… {{ store.staleNote }}</p>
             <v-skeleton-loader v-if="viewState.kind === 'loading'"
                 type="table-thead, table-row, table-row, table-row" />
             <v-table v-else>
@@ -65,13 +65,13 @@
                         <td>{{ order.pickupAddress }}</td>
                         <td>{{ order.status }}</td>
                         <td class="flex gap-2 items-center">
-                            <!-- Customer/courier tracking is a deep-linkable page (A.2.1);
-                                     staff work status through the Update dialog below, so no
-                                     Detail button in the staff queue. -->
-                            <v-btn v-if="!isStaffView" variant="outlined" text="Detail" :to="detailTo(order.id)" />
+                            <!-- Setiap order dapat dilacak via halaman detail
+                                      deep-linkable /orders/:id (A.2.1) untuk semua role;
+                                      staff/courier tetap kerja via dialog Update. -->
+                            <v-btn variant="outlined" text="Detail" :to="detailTo(order.id)" />
                             <!-- Staff/courier transitions are scope-gated UX only (A.2.2) -->
-                            <v-btn v-if="canFulfil" class="bg-cyan-700 text-cyan-50" text="Update"
-                                @click="handleUpdate(order.id)" />
+                            <!-- <v-btn v-if="canFulfil" class="bg-cyan-700 text-cyan-50" text="Update"
+                                @click="handleUpdate(order.id)" /> -->
                         </td>
                     </tr>
                 </tbody>
@@ -107,14 +107,12 @@ const viewState = ref<{ kind: 'loading' | 'empty' | 'error' | 'content' }>({ kin
 const selectedOrder: Ref<Order | undefined> = ref(undefined);
 const selectedPackage: Ref<Package | undefined | null> = ref(undefined);
 
-// Scope watch: fulfil UI only with orders:fulfil or deliveries:write (UX only).
+// Scope checks (UX only): empty-state order CTA needs orders:write
+// (same guard as /catalogue); fulfil UI needs fulfil/delivery scopes.
 const canFulfil = computed(() =>
     session.scopes.includes('orders:fulfil') || session.scopes.includes('deliveries:write'),
 );
-const isCustomerView = computed(() => !session.roles.includes('staff') && !session.roles.includes('courier'));
-// Staff queue has no detail page (redirects to /staff/orders) —
-// status work happens in the Update dialog.
-const isStaffView = computed(() => route.path.startsWith('/staff'));
+const canOrder = computed(() => session.scopes.includes('orders:write'));
 
 const statusOptions: Array<{ title: string; value: OrderStatus }> = [
     { title: 'Placed', value: 'placed' },
@@ -129,17 +127,16 @@ const statusOptions: Array<{ title: string; value: OrderStatus }> = [
 ];
 
 const heading = computed(() => {
-    if (route.path.startsWith('/courier/pickups')) return 'Penjemputan';
-    if (route.path.startsWith('/courier/deliveries')) return 'Pengantaran';
-    if (route.path.startsWith('/staff')) return 'Tracking Pesanan Laundry';
+    if (route.path.startsWith('/pickups')) return 'Penjemputan';
+    if (route.path.startsWith('/deliveries')) return 'Pengantaran';
     if (statusFilter.value === 'picked_up') return 'Perlu Ditimbang';
-    return 'Pesanan Saya';
+    return 'Daftar Pesanan';
 });
 
 const subheading = computed(() => {
-    if (route.path.startsWith('/courier')) return 'Kelola penjemputan & pengantaran.';
-    if (route.path.startsWith('/staff')) return 'Kelola pesanan pelanggan.';
-    return 'Lacak pesanan Anda.';
+    if (route.path.startsWith('/pickups') || route.path.startsWith('/deliveries'))
+        return 'Kelola penjemputan & pengantaran.';
+    return 'Lacak dan kelola pesanan.';
 });
 
 const filtered = computed(() => {
@@ -150,16 +147,14 @@ const filtered = computed(() => {
     );
 });
 
-/** Detail address keeps the customer namespace (/orders/:id is the shared
- * deep-link; OrderDetailView is customer-only: track/pay/cancel). */
+/** Detail is always the shared deep-link /orders/:id (one URL per workflow). */
 function detailTo(id: string): string {
-    if (route.path.startsWith('/customer')) return `/customer/orders/${id}`;
     return `/orders/${id}`;
 }
 
 function currentStatus(): OrderStatus | undefined {
-    if (route.path === '/courier/pickups') return 'placed';
-    if (route.path === '/courier/deliveries') return 'ready';
+    if (route.path === '/pickups') return 'placed';
+    if (route.path === '/deliveries') return 'ready';
     return statusFilter.value ?? undefined;
 }
 
@@ -210,8 +205,8 @@ watch(() => route.query.status, (s) => {
 watch(() => route.path, () => void load());
 
 onMounted(async () => {
-    if (route.path === '/courier/pickups') statusFilter.value = 'placed';
-    if (route.path === '/courier/deliveries') statusFilter.value = 'ready';
+    if (route.path === '/pickups') statusFilter.value = 'placed';
+    if (route.path === '/deliveries') statusFilter.value = 'ready';
     await load();
     timer = setInterval(load, pollInterval());
 });
