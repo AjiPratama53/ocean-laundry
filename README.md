@@ -66,14 +66,33 @@ Calls per screen: daftar = 1 (GET list, conditional + 304), detail = 2
 maks (GET entity + GET paket untuk nama). Token dilampirkan di satu tempat
 (`src/lib/api.ts`); base URL dari `VITE_API_BASE_URL`.
 
+## Deployed Application URL
+
+Aplikasi telah dideploy dan dapat diakses publik pada:
+- **Web Application URL:** https://ocean-laundry-eosin.vercel.app/
+- **Backend API Base URL:** https://ocean-laundry-eosin.vercel.app/v1
+
 ## Catatan Penyimpanan Sesi (A.3 butir 5)
 
 Sesi otentikasi (JWT Access Token dan Refresh Token) disimpan pada `localStorage` peramban web (`ocean.session`). Keputusan ini diambil agar sesi tetap persisten ketika pengguna membuka tab baru, menyalin URL *deep-link*, atau melakukan *page reload*.
 
 Konsekuensi keamanannya: token yang berada di `localStorage` dapat dibaca oleh skrip JavaScript apa pun yang dieksekusi pada *origin* yang sama (rentan terhadap serangan *Cross-Site Scripting* / XSS). Untuk memitigasi risiko tersebut, masa berlaku token dibatasi (*short-lived access token*), mekanisme *silent refresh* digunakan untuk memperbarui token secara otomatis, dan setiap operasi pada *service* backend diverifikasi secara otoritatif menggunakan *scope* dan *ownership check*.
 
-## Akun Pengujian Presentasi (Session 7 Demonstration)
+## Akun Pengujian Presentasi & Pengujian Mandiri (Session 7)
 
-1. **Staff Outlet**: Memiliki hak akses/scopes `packages:read`, `packages:write`, `orders:read`, `orders:fulfil`.
-2. **Customer**: Memiliki hak akses/scopes `packages:read`, `orders:read`, `orders:write`, `payments:read`, `payments:write`.
-3. **Kurir** (opsional ketiga): scopes `orders:read`, `deliveries:write`.
+Sesuai ketentuan tugas (grader dapat menguji alur secara mandiri tanpa bantuan pengembang), gunakan akun uji berikut:
+
+| Peran | Username | Password | Scopes yang Dimiliki |
+|---|---|---|---|
+| **Customer A** | `customer-a` | `anders1729` | `packages:read`, `orders:read`, `orders:write`, `payments:read`, `payments:write` |
+| **Customer B** | `customer-b` | `anders1729` | `packages:read`, `orders:read`, `orders:write`, `payments:read`, `payments:write` |
+| **Staff Outlet A** | `staff-a` | `anders1729` | `packages:read`, `packages:write`, `orders:read`, `orders:fulfil`, `payments:read` |
+| **Staff Outlet B** | `staff-b` | `anders1729` | `packages:read`, `packages:write`, `orders:read`, `orders:fulfil`, `payments:read` |
+| **Kurir A** | `courier-a` | `anders1729` | `orders:read`, `deliveries:write` |
+| **Kurir B** | `courier-b` | `anders1729` | `orders:read`, `deliveries:write` |
+
+> **Catatan Pengujian:**
+> 1. Akun **Customer** dapat menelusuri katalog, membuat pesanan baru, melacak status pesanan secara live, dan melakukan pembayaran nota.
+> 2. Akun **Staff** dapat mengelola katalog paket, menimbang cucian (`POST /orders/{id}/weigh`), mencuci (`POST /orders/{id}/wash`), dan menandai cucian siap diambil (`POST /orders/{id}/ready`).
+> 3. Akun **Kurir** dapat mengambil cucian kotor dari customer (`POST /orders/{id}/pickup`), mengantar cucian bersih (`POST /orders/{id}/delivery`), dan menyelesaikan pengantaran (`POST /orders/{id}/complete`).
+> 4. Token akses JWT dapat diakses langsung pada console peramban via `window.__ocean.token()` untuk pengujian console attack (A.9).
