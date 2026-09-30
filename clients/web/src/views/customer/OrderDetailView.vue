@@ -119,7 +119,7 @@ import { ApiError, getPackageConditional, type Order, type OrderStatus, type Pac
 import formatBalance from '@/lib/formatPrice';
 import { useOrderStore } from '@/stores/orderStore';
 import { useSessionStore } from '@/stores/session';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 const qualityAssurances: string[] = [
@@ -260,6 +260,40 @@ async function doCancel() {
 }
 
 onMounted(load);
+
+let _timer: ReturnType<typeof setInterval> | null = null;
+
+onMounted(() => {
+    function pollInterval(): number {
+        const v = Number(import.meta.env.VITE_POLL_INTERVAL_MS ?? 10000);
+        return Number.isFinite(v) && v > 0 ? v : 10000;
+    }
+    // Poll with conditional GET (If-None-Match) so unchanged data returns 304 (A.7).
+    _timer = setInterval(async () => {
+        if (refreshing.value) return; // skip if a manual refresh is in progress
+        refreshing.value = true;
+        try {
+            const r = await store.fetchOrder(id(), etag.value);
+            if (!r.notModified && r.data) {
+                order.value = r.data;
+                etag.value = r.etag;
+                store.upsert(r.data);
+            }
+            fetchedAt.value = new Date();
+            stale.value = false;
+            if (viewState.value.kind !== 'content') viewState.value = { kind: 'content' };
+        } catch {
+            // Background poll failure — keep data, mark stale (A.5)
+            if (order.value) stale.value = true;
+        } finally {
+            refreshing.value = false;
+        }
+    }, pollInterval());
+});
+
+onUnmounted(() => {
+    if (_timer) clearInterval(_timer);
+});
 </script>
 
 <style scoped></style>

@@ -1,6 +1,14 @@
 <template>
     <customer-error v-if="viewState.kind === 'error'" :problem="loadProblem" :status="loadStatus" @retry="init" />
 
+    <!-- empty — no packages available yet -->
+    <v-col v-else-if="viewState.kind === 'empty'" class="flex flex-col items-center justify-center gap-4 py-24">
+        <v-icon icon="mdi-package-variant-remove" size="80" class="text-gray-300" />
+        <h1 class="font-bold text-2xl text-gray-500">Belum ada paket tersedia</h1>
+        <p class="text-gray-400">Paket laundry belum disiapkan staff. Silakan coba lagi nanti.</p>
+        <v-btn variant="outlined" to="/customer/catalogue" text="Kembali ke Katalog" />
+    </v-col>
+
     <v-col v-else class="flex flex-col gap-4">
         <v-card class="p-4 flex gap-4 justify-between">
             <v-skeleton-loader v-if="viewState.kind === 'loading'" v-for="step in steps" :key="step.step" width="16rem"
@@ -191,7 +199,7 @@ function selectAddress(address: Address) {
     pickupAddress.value = address.address;
 }
 
-const viewState = ref<{ kind: 'loading' | 'error' | 'content' }>({ kind: 'loading' });
+const viewState = ref<{ kind: 'loading' | 'empty' | 'error' | 'content' }>({ kind: 'loading' });
 const isPostingOrder = ref(false);
 
 const isAddressDialogOpen = ref(false);
@@ -238,6 +246,11 @@ async function init() {
         } else {
             if (!packages.loaded) await packages.fetchPackages();
             selectedPackage.value = packages.getPackages[0] ?? null;
+            // A.5: if catalogue is empty, show the empty state rather than a null-package form.
+            if (!selectedPackage.value) {
+                viewState.value = { kind: 'empty' };
+                return;
+            }
         }
         if (selectedAddress.value) pickupAddress.value = selectedAddress.value.address;
         viewState.value = { kind: 'content' };

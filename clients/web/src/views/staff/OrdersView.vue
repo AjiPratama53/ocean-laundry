@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 import OrderEmpty from '@/components/OrderEmpty.vue';
-import OrderDialog from '@/components/staff/OrderDialog .vue';
+import OrderDialog from '@/components/staff/OrderDialog.vue';
 import StaffError from '@/components/staff/StaffError.vue';
 import { ApiError, type Order, type OrderStatus, type Package } from '@/lib/api';
 import { useOrderStore } from '@/stores/orderStore';
