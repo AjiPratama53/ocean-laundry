@@ -24,25 +24,22 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         run: |
           cd "$GITHUB_WORKSPACE"
-          vercel link --yes --project="$VERCEL_PROJECT_ID" --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
-          vercel pull --yes --environment=production --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+          vercel link --yes --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Build Project Artifacts
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         run: |
           cd "$GITHUB_WORKSPACE"
-          vercel build --prod --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           cd "$GITHUB_WORKSPACE"
-          vercel deploy --prebuilt --prod --scope="$VERCEL_ORG_ID" --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
