@@ -164,14 +164,19 @@ const orderStatusKey: Record<OrderStatus, string> = {
 // sama seperti OrderDialog. No role checks: the token scopes decide.
 const canPay = computed(() => session.scopes.includes('payments:write'));
 const canCancel = computed(() => session.scopes.includes('orders:write'));
+// Mirrors POST /orders/{id}/cancel: the service only cancels 'placed' or
+// 'awaiting_payment' orders (409 for anything else) — never 'picked_up'.
 const showCancel = computed(() =>
-    canCancel.value && order.value != null && ['placed', 'picked_up'].includes(order.value.status),
+    canCancel.value && order.value != null && ['placed', 'awaiting_payment'].includes(order.value.status),
 );
+// Mirrors the service transitions exactly: weigh/wash/ready need
+// orders:fulfil; pickup/delivery/complete need deliveries:write.
 const canUpdateForStatus = computed(() => {
     if (!order.value) return false;
     const s = new Set(session.scopes);
     switch (order.value.status) {
         case 'picked_up':
+        case 'awaiting_payment':
         case 'washing': return s.has('orders:fulfil');
         case 'placed':
         case 'ready':

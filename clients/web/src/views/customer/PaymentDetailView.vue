@@ -14,7 +14,7 @@
         <v-icon icon="mdi-receipt-text-remove-outline" size="80" class="text-gray-300" />
         <h1 class="font-bold text-2xl text-gray-500">Pembayaran tidak ditemukan</h1>
         <p class="text-gray-400">Nota ini tidak ada atau tidak dapat diakses dengan akun ini.</p>
-        <v-btn variant="outlined" to="/customer/catalogue" text="Kembali ke Katalog" />
+        <v-btn variant="outlined" to="/catalogue" text="Kembali ke Katalog" />
     </v-col>
 
     <!-- error (403, 5xx, network) — explain in domain terms, never send to sign-in for 403 (A.3.2) -->
@@ -64,7 +64,7 @@
                 <v-btn
                     variant="text"
                     class="text-cyan-700 font-mono text-sm"
-                    :to="`/customer/orders/${payment?.orderId}`"
+                    :to="`/orders/${payment?.orderId}`"
                     :text="payment?.orderId ?? '—'"
                 />
             </v-row>
@@ -106,7 +106,7 @@
 
         <!-- Back link -->
         <v-btn variant="text" prepend-icon="mdi-arrow-left" text="Kembali ke pesanan"
-            :to="payment?.orderId ? `/customer/orders/${payment.orderId}` : '/customer/catalogue'" />
+            :to="payment?.orderId ? `/orders/${payment.orderId}` : '/catalogue'" />
     </v-col>
 </template>
 

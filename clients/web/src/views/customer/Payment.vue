@@ -274,7 +274,9 @@ async function handleNewPayment() {
             { orderId: order.value.id, amount: amount.value },
             idempotencyKey.value,
         );
-        await router.push(`/customer/payments/${r.data.id}`);
+        // Land on the new payment's own deep-linkable URL (A.2.1) — the
+        // nota where the customer confirms the payment (proceed → paid).
+        await router.push(`/payments/${r.data.id}`);
     } catch (e) {
         if (e instanceof ApiError && (e.status === 400 || e.status === 422)) {
             // This backend 422 carries no invalid-params extension for an

@@ -106,7 +106,7 @@ const nextActionLabel = computed(() => {
         case 'placed': return 'Pickup (kurir)';
         case 'picked_up': return 'Timbang (staff)';
         case 'weighed': return 'Cuci (staff)';
-        case 'awaiting_payment': return 'Menunggu pembayaran customer';
+        case 'awaiting_payment': return 'Cuci (staff)';
         case 'washing': return 'Tandai siap';
         case 'ready': return 'Antar (kurir)';
         case 'delivering': return 'Selesaikan';
@@ -115,13 +115,15 @@ const nextActionLabel = computed(() => {
 });
 
 // Scope-gated UX (A.2.2): buttons hidden without the scope; service still
-// refuses 403/404 if forced from the console (A.9).
+// refuses 403/404 if forced from the console (A.9). Mirrors the service
+// transitions: wash needs orders:fulfil from 'awaiting_payment'.
 const canAct = computed(() => {
     const s = new Set(session.scopes);
     switch (props.order?.status) {
         case 'placed': return s.has('deliveries:write');
         case 'picked_up':
         case 'weighed':
+        case 'awaiting_payment':
         case 'washing': return s.has('orders:fulfil');
         case 'ready':
         case 'delivering': return s.has('deliveries:write');
@@ -158,7 +160,8 @@ async function handleUpdateOrder(): Promise<boolean> {
         switch (props.order.status) {
             case 'placed': await store.pickup(id, etag.value); break;
             case 'picked_up': await store.weigh(id, inputWeight.value!, etag.value); break;
-            case 'weighed': await store.wash(id, etag.value); break;
+            case 'weighed':
+            case 'awaiting_payment': await store.wash(id, etag.value); break;
             case 'washing': await store.ready(id, etag.value); break;
             case 'ready': await store.deliver(id, etag.value); break;
             case 'delivering': await store.complete(id, etag.value); break;

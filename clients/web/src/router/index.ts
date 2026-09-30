@@ -91,12 +91,9 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Pesanan Saya",
     icon: "mdi-invoice-text-outline",
     to: "/orders",
-    requiredAnyScopes: [
-      "orders:read",
-      "orders:write",
-      "orders:fulfil",
-      "deliveries:write",
-    ],
+    // Mirrors the /orders guard exactly: the list endpoint requires
+    // orders:read, so orders:write alone must not show this entry.
+    requiredAnyScopes: ["orders:read", "orders:fulfil", "deliveries:write"],
   },
   {
     title: "Buat Order",
