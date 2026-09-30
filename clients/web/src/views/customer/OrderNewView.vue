@@ -6,7 +6,7 @@
         <v-icon icon="mdi-package-variant-remove" size="80" class="text-gray-300" />
         <h1 class="font-bold text-2xl text-gray-500">Belum ada paket tersedia</h1>
         <p class="text-gray-400">Paket laundry belum disiapkan staff. Silakan coba lagi nanti.</p>
-        <v-btn variant="outlined" to="/customer/catalogue" text="Kembali ke Katalog" />
+        <v-btn variant="outlined" to="/catalogue" text="Kembali ke Katalog" />
     </v-col>
 
     <v-col v-else class="flex flex-col gap-4">
