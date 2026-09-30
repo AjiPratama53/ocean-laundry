@@ -55,7 +55,7 @@ async function submit() {
 
     busy.value = true
     try {
-        await session.loginWithPassword(username.value, password.value, String(route.query.redirect ?? '/'))
+        await session.loginWithPassword(username.value, password.value, String(route.query.redirect ?? '/catalogue'))
     }
     catch (e) {
         if (e instanceof AuthError && e.code === 'invalid_grant') {

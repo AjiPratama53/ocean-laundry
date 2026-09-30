@@ -20,8 +20,6 @@
                 class=" bg-transparent justify-end" />
             <v-row v-else class="flex flex-1 justify-end">
                 <v-btn prepend-icon="mdi-refresh" text="Refresh" @click="load" :loading="refreshing" />
-                <v-btn v-if="canPay && order?.status === 'awaiting_payment'" color="primary"
-                    :to="`/payments/new?orderId=${order?.id}`" text="Bayar" />
             </v-row>
         </v-row>
         <v-card class="p-6 flex justify-between items-center">
@@ -95,6 +93,9 @@
                     block size="x-large" text="Batalkan Pesanan" />
                 <v-btn v-if="canUpdateForStatus" class="bg-cyan-700 text-cyan-50" @click="isUpdateOpen = true" block
                     size="x-large" text="Update Status" prepend-icon="mdi-check" />
+                <v-btn v-if="canPay && order?.status === 'awaiting_payment'" class="bg-cyan-700 text-cyan-50"
+                    size="x-large" :to="`/payments/new?orderId=${order?.id}`" text="Bayar" />
+
                 <p v-if="!showCancel && !canUpdateForStatus">
                     Tidak ada aksi yang tersedia untuk akun ini dalam status ini.</p>
             </v-row>

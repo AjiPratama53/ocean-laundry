@@ -21,7 +21,11 @@
                         :title="item.title" :to="item.to" />
                 </template>
             </v-list>
+
             <v-list>
+                <v-list-item v-if="session.isSignedIn" prepend-icon="mdi-logout" link title="Keluar"
+                    @click="session.signOut" to="/login" />
+                <v-divider></v-divider>
                 <v-list-item class="logo">
                     <img src="../assets/Ocean Laundry Logo.svg" />
                 </v-list-item>
