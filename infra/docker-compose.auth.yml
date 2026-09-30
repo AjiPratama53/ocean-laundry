@@ -8,5 +8,5 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./keycloak/ocean-laundry-realm.json:/opt/keycloak/data/import/ocean-laundry-realm.json
+      - ./keycloak/ocean-laundry-realm.json:/opt/keycloak/data/import/realm-export.json
     

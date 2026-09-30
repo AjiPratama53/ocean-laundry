@@ -67,18 +67,22 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Tracking & Riwayat",
     icon: "mdi-washing-machine",
     to: "/orders",
+    // Staff queue: fulfil only. Customer/courier must not see this label
+    // (they have their own entries below pointing elsewhere).
     requiredAnyScopes: ["orders:fulfil"],
   },
   {
     title: "Penjemputan",
     icon: "mdi-truck",
-    to: "/orders?status=placed",
-    requiredAnyScopes: ["orders:read", "deliveries:write"],
+    to: "/pickups",
+    // Courier-only queue. orders:read alone must NOT show this entry —
+    // otherwise every customer/staff token would see a courier menu.
+    requiredAnyScopes: ["deliveries:write"],
   },
   {
     title: "Pengantaran",
     icon: "mdi-package-variant-closed",
-    to: "/orders?status=ready",
+    to: "/deliveries",
     requiredAnyScopes: ["deliveries:write"],
   },
   {
@@ -91,9 +95,12 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Pesanan Saya",
     icon: "mdi-invoice-text-outline",
     to: "/orders",
-    // Mirrors the /orders guard exactly: the list endpoint requires
-    // orders:read, so orders:write alone must not show this entry.
-    requiredAnyScopes: ["orders:read", "orders:fulfil", "deliveries:write"],
+    // Customer-only entry (UX role marker): every customer token holds
+    // orders:write while staff/courier tokens do not. The /orders route
+    // guard itself stays an OR over read/fulfil/deliveries (see below) —
+    // this menu scope is intentionally narrower so staff/courier do not
+    // see a "my orders" entry that is not theirs.
+    requiredAnyScopes: ["orders:write"],
   },
   {
     title: "Buat Order",

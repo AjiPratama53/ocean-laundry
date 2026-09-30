@@ -48,6 +48,15 @@
   "roles": {
     "realm": [
       {
+        "id": "e23b6462-eb98-4bd2-adff-1b3c37c04347",
+        "name": "courier",
+        "description": "",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ecb1278b-48a3-4d95-956e-9cca9f3fec66",
+        "attributes": {}
+      },
+      {
         "id": "f6c81a15-ef1f-470a-afaf-dd8e3f62ae4c",
         "name": "default-roles-ocean-laundry",
         "description": "${role_default-roles}",
@@ -64,6 +73,15 @@
             ]
           }
         },
+        "clientRole": false,
+        "containerId": "ecb1278b-48a3-4d95-956e-9cca9f3fec66",
+        "attributes": {}
+      },
+      {
+        "id": "299d7457-ddf5-4067-8245-291802ef41e8",
+        "name": "customer",
+        "description": "",
+        "composite": false,
         "clientRole": false,
         "containerId": "ecb1278b-48a3-4d95-956e-9cca9f3fec66",
         "attributes": {}
@@ -87,27 +105,9 @@
         "attributes": {}
       },
       {
-        "id": "13e4b908-bee5-4b56-87e7-37c819555132",
-        "name": "customer",
-        "description": "Ocean Laundry customer workflow access (scope-gated)",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "ecb1278b-48a3-4d95-956e-9cca9f3fec66",
-        "attributes": {}
-      },
-      {
-        "id": "b5833d0a-ffb4-4d46-bcc6-69b36edc545c",
+        "id": "561c22c7-95ba-4ed1-a67a-b5079d319a2c",
         "name": "staff",
-        "description": "Ocean Laundry staff workflow access (scope-gated)",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "ecb1278b-48a3-4d95-956e-9cca9f3fec66",
-        "attributes": {}
-      },
-      {
-        "id": "0061f216-e176-4d8f-a2e2-12edb87e6332",
-        "name": "courier",
-        "description": "Ocean Laundry courier workflow access (scope-gated)",
+        "description": "",
         "composite": false,
         "clientRole": false,
         "containerId": "ecb1278b-48a3-4d95-956e-9cca9f3fec66",
@@ -303,24 +303,24 @@
           "composites": {
             "client": {
               "realm-management": [
-                "view-clients",
                 "query-realms",
+                "view-clients",
                 "view-users",
                 "manage-authorization",
                 "query-groups",
                 "manage-identity-providers",
                 "view-identity-providers",
                 "manage-realm",
-                "query-users",
                 "manage-users",
+                "query-users",
                 "view-realm",
                 "view-events",
                 "view-authorization",
-                "query-clients",
                 "create-client",
+                "query-clients",
                 "manage-clients",
-                "manage-events",
-                "impersonation"
+                "impersonation",
+                "manage-events"
               ]
             }
           },
@@ -442,9 +442,7 @@
       "path": "/couriers",
       "subGroups": [],
       "attributes": {},
-      "realmRoles": [
-        "courier"
-      ],
+      "realmRoles": [],
       "clientRoles": {}
     },
     {
@@ -453,9 +451,7 @@
       "path": "/customers",
       "subGroups": [],
       "attributes": {},
-      "realmRoles": [
-        "customer"
-      ],
+      "realmRoles": [],
       "clientRoles": {}
     },
     {
@@ -464,9 +460,7 @@
       "path": "/staffs",
       "subGroups": [],
       "attributes": {},
-      "realmRoles": [
-        "staff"
-      ],
+      "realmRoles": [],
       "clientRoles": {}
     }
   ],
@@ -538,175 +532,41 @@
       ],
       "notBefore": 0,
       "groups": []
-    },
-    {
-      "id": "0b58a597-74eb-4ead-af66-64a9b4daf3a2",
-      "username": "customer-a",
-      "email": "customer-a@ocean-laundry.test",
-      "emailVerified": false,
-      "firstName": "Customer",
-      "lastName": "A",
-      "createdTimestamp": 1790783400011,
-      "enabled": true,
-      "totp": false,
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "realmRoles": [
-        "default-roles-ocean-laundry"
-      ],
-      "notBefore": 0,
-      "groups": [
-        "/customers"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "anders1729",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "e3a73cea-3695-48e0-bf95-bb25bfe10cba",
-      "username": "customer-b",
-      "email": "customer-b@ocean-laundry.test",
-      "emailVerified": false,
-      "firstName": "Customer",
-      "lastName": "B",
-      "createdTimestamp": 1790783400011,
-      "enabled": true,
-      "totp": false,
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "realmRoles": [
-        "default-roles-ocean-laundry"
-      ],
-      "notBefore": 0,
-      "groups": [
-        "/customers"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "anders1729",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "c6acc6b8-ac19-4442-ad71-1968b41cb3c8",
-      "username": "staff-a",
-      "email": "staff-a@ocean-laundry.test",
-      "emailVerified": false,
-      "firstName": "Staff",
-      "lastName": "A",
-      "createdTimestamp": 1790783400011,
-      "enabled": true,
-      "totp": false,
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "realmRoles": [
-        "default-roles-ocean-laundry"
-      ],
-      "notBefore": 0,
-      "groups": [
-        "/staffs"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "anders1729",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "d732b228-c568-4156-a609-beb0341a64c5",
-      "username": "staff-b",
-      "email": "staff-b@ocean-laundry.test",
-      "emailVerified": false,
-      "firstName": "Staff",
-      "lastName": "B",
-      "createdTimestamp": 1790783400011,
-      "enabled": true,
-      "totp": false,
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "realmRoles": [
-        "default-roles-ocean-laundry"
-      ],
-      "notBefore": 0,
-      "groups": [
-        "/staffs"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "anders1729",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "204720ca-ce44-4313-bc98-e032a406d47d",
-      "username": "courier-a",
-      "email": "courier-a@ocean-laundry.test",
-      "emailVerified": false,
-      "firstName": "Courier",
-      "lastName": "A",
-      "createdTimestamp": 1790783400011,
-      "enabled": true,
-      "totp": false,
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "realmRoles": [
-        "default-roles-ocean-laundry"
-      ],
-      "notBefore": 0,
-      "groups": [
-        "/couriers"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "anders1729",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "a24eb58e-4e63-4ca0-a10d-ecb91a973d82",
-      "username": "courier-b",
-      "email": "courier-b@ocean-laundry.test",
-      "emailVerified": false,
-      "firstName": "Courier",
-      "lastName": "B",
-      "createdTimestamp": 1790783400011,
-      "enabled": true,
-      "totp": false,
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "realmRoles": [
-        "default-roles-ocean-laundry"
-      ],
-      "notBefore": 0,
-      "groups": [
-        "/couriers"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "anders1729",
-          "temporary": false
-        }
-      ]
     }
   ],
   "scopeMappings": [
     {
+      "clientScope": "packages:read",
+      "roles": [
+        "courier",
+        "staff",
+        "customer"
+      ]
+    },
+    {
+      "clientScope": "payments:write",
+      "roles": [
+        "customer"
+      ]
+    },
+    {
+      "clientScope": "packages:write",
+      "roles": [
+        "staff"
+      ]
+    },
+    {
       "clientScope": "deliveries:write",
       "roles": [
         "courier"
+      ]
+    },
+    {
+      "clientScope": "payments:read",
+      "roles": [
+        "courier",
+        "staff",
+        "customer"
       ]
     },
     {
@@ -722,41 +582,7 @@
       ]
     },
     {
-      "clientScope": "orders:read",
-      "roles": [
-        "courier",
-        "customer",
-        "staff"
-      ]
-    },
-    {
       "clientScope": "orders:write",
-      "roles": [
-        "customer"
-      ]
-    },
-    {
-      "clientScope": "packages:read",
-      "roles": [
-        "customer",
-        "staff"
-      ]
-    },
-    {
-      "clientScope": "packages:write",
-      "roles": [
-        "staff"
-      ]
-    },
-    {
-      "clientScope": "payments:read",
-      "roles": [
-        "customer",
-        "staff"
-      ]
-    },
-    {
-      "clientScope": "payments:write",
       "roles": [
         "customer"
       ]
@@ -1382,10 +1208,11 @@
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
         "http://localhost:5173/*",
+        "https://ocean-laundry-eosin.vercel.app/*",
         "/*"
       ],
       "webOrigins": [
-        "/*",
+        "https://ocean-laundry-eosin.vercel.app",
         "http://localhost:5173"
       ],
       "notBefore": 0,
@@ -1402,12 +1229,13 @@
         "realm_client": "false",
         "oidc.ciba.grant.enabled": "false",
         "backchannel.logout.session.required": "true",
+        "post.logout.redirect.uris": "+",
         "oauth2.device.authorization.grant.enabled": "false",
         "display.on.consent.screen": "false",
         "backchannel.logout.revoke.offline.tokens": "false"
       },
       "authenticationFlowBindingOverrides": {},
-      "fullScopeAllowed": false,
+      "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
       "defaultClientScopes": [
         "web-origins",
@@ -2208,9 +2036,10 @@
           "config": {
             "id.token.claim": "false",
             "lightweight.claim": "false",
-            "access.token.claim": "true",
             "introspection.token.claim": "true",
-            "included.custom.audience": "ocean-laundry-api"
+            "access.token.claim": "true",
+            "included.custom.audience": "ocean-laundry-api",
+            "userinfo.token.claim": "false"
           }
         }
       ]
@@ -2226,7 +2055,14 @@
     "acr",
     "basic",
     "audience",
-    "ocean-audience"
+    "ocean-audience",
+    "deliveries:write",
+    "orders:fulfil",
+    "packages:write",
+    "orders:write",
+    "payments:write",
+    "packages:read",
+    "payments:read"
   ],
   "defaultOptionalClientScopes": [
     "offline_access",
@@ -2234,14 +2070,7 @@
     "phone",
     "microprofile-jwt",
     "organization",
-    "packages:read",
-    "packages:write",
-    "orders:read",
-    "orders:write",
-    "orders:fulfil",
-    "deliveries:write",
-    "payments:read",
-    "payments:write"
+    "orders:read"
   ],
   "browserSecurityHeaders": {
     "contentSecurityPolicyReportOnly": "",
@@ -2273,14 +2102,14 @@
         "subComponents": {},
         "config": {
           "allowed-protocol-mapper-types": [
-            "saml-user-property-mapper",
-            "oidc-usermodel-attribute-mapper",
+            "oidc-usermodel-property-mapper",
             "oidc-full-name-mapper",
             "saml-role-list-mapper",
             "oidc-sha256-pairwise-sub-mapper",
-            "oidc-usermodel-property-mapper",
-            "saml-user-attribute-mapper",
-            "oidc-address-mapper"
+            "oidc-address-mapper",
+            "oidc-usermodel-attribute-mapper",
+            "saml-user-property-mapper",
+            "saml-user-attribute-mapper"
           ]
         }
       },
@@ -2335,13 +2164,13 @@
         "subComponents": {},
         "config": {
           "allowed-protocol-mapper-types": [
-            "oidc-usermodel-property-mapper",
-            "oidc-usermodel-attribute-mapper",
-            "saml-role-list-mapper",
-            "saml-user-attribute-mapper",
-            "oidc-address-mapper",
             "oidc-sha256-pairwise-sub-mapper",
             "oidc-full-name-mapper",
+            "saml-user-attribute-mapper",
+            "oidc-usermodel-attribute-mapper",
+            "oidc-address-mapper",
+            "oidc-usermodel-property-mapper",
+            "saml-role-list-mapper",
             "saml-user-property-mapper"
           ]
         }

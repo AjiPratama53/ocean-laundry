@@ -167,21 +167,26 @@ const orderStatusKey: Record<OrderStatus, string> = {
 const canPay = computed(() => session.scopes.includes('payments:write'));
 const canCancel = computed(() => session.scopes.includes('orders:write'));
 // Mirrors POST /orders/{id}/cancel: the service only cancels 'placed' or
-// 'awaiting_payment' orders (409 for anything else) — never 'picked_up'.
+// 'awaiting_payment' orders (409 for anything else) — never 'picked_up',
+// so the button must not appear there either.
 const showCancel = computed(() =>
-    canCancel.value && order.value != null && ['placed', 'picked_up', 'awaiting_payment'].includes(order.value.status),
+    canCancel.value && order.value != null && ['placed', 'awaiting_payment'].includes(order.value.status),
 );
-// Mirrors the service transitions exactly: weigh/wash/ready need
-// orders:fulfil; pickup/delivery/complete need deliveries:write.
+// Mirrors the service transitions exactly (same map as OrderDialog):
+// pickup/delivery/complete need deliveries:write; weigh/wash/ready need
+// orders:fulfil. No orders:write fallback — a customer token must never
+// see "Update Status".
 const canUpdateForStatus = computed(() => {
     if (!order.value) return false;
     const s = new Set(session.scopes);
     switch (order.value.status) {
-        case 'picked_up':
-        case 'washing': return s.has('orders:fulfil');
         case 'placed':
         case 'ready':
         case 'delivering': return s.has('deliveries:write');
+        case 'picked_up':
+        case 'weighed':
+        case 'awaiting_payment':
+        case 'washing': return s.has('orders:fulfil');
         default: return false;
     }
 });

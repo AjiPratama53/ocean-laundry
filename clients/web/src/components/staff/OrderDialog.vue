@@ -1,7 +1,7 @@
 <template>
     <v-dialog v-model="isOpen" max-width="80%">
         <template v-slot:default="{ isActive }">
-            <v-card v-if="order && package">
+            <v-card v-if="order">
                 <div class="flex gap-4 px-8 py-6 bg-blue-100 items-center">
                     <div class="p-2 rounded-2xl bg-cyan-700 text-cyan-50">
                         <v-icon icon="mdi-checkbox-marked-circle-plus-outline" />
@@ -23,7 +23,7 @@
                     </v-row>
                     <v-divider />
                     <v-col>
-                        <v-row class="flex justify-between items-center">
+                        <v-row v-if="package" class="flex justify-between items-center">
                             <p>Paket</p>
                             <p>{{ package.name }}</p>
                         </v-row>
@@ -31,11 +31,12 @@
                             <p>Alamat</p>
                             <p>{{ order.pickupAddress }}</p>
                         </v-row>
-                        <v-row class="flex justify-between items-center">
+                        <v-row v-if="package" class="flex justify-between items-center">
                             <p>Subtotal</p>
                             <p>
-                                {{ order.weightGrams ? `Rp ${formatBalance(order.weightGrams * package.price / 1000)}` :
-                                '--.---'
+                                {{ order.weightGrams ? `Rp ${formatBalance(order.weightGrams * package.price
+                                    / 1000)}` :
+                                    '--.---'
                                 }}
                             </p>
                         </v-row>
@@ -65,8 +66,8 @@
                         <div class="flex gap-4">
                             <v-btn text="Batal" @click="isActive.value = false" variant="text" />
                             <v-btn v-if="canAct" prepend-icon="mdi-check" class="bg-cyan-700 text-cyan-50"
-                                :text="nextActionLabel" :loading="isUpdatingOrder"
-                                :disabled="isUpdatingOrder" @click="handleUpdateOrder().then((ok) => { if (ok) isActive.value = false })" />
+                                :text="nextActionLabel" :loading="isUpdatingOrder" :disabled="isUpdatingOrder"
+                                @click="handleUpdateOrder().then((ok) => { if (ok) isActive.value = false })" />
                         </div>
                     </div>
                 </v-col>
@@ -116,7 +117,10 @@ const nextActionLabel = computed(() => {
 
 // Scope-gated UX (A.2.2): buttons hidden without the scope; service still
 // refuses 403/404 if forced from the console (A.9). Mirrors the service
-// transitions: wash needs orders:fulfil from 'awaiting_payment'.
+// transitions exactly (same map as OrderDetailView): pickup/delivery/
+// complete need deliveries:write; weigh/wash/ready need orders:fulfil.
+// Terminal statuses (completed/cancelled/…) have no next action, so the
+// default is false — orders:write (cancel) must never open this dialog.
 const canAct = computed(() => {
     const s = new Set(session.scopes);
     switch (props.order?.status) {
@@ -127,7 +131,7 @@ const canAct = computed(() => {
         case 'washing': return s.has('orders:fulfil');
         case 'ready':
         case 'delivering': return s.has('deliveries:write');
-        default: return s.has('orders:fulfil') || s.has('deliveries:write') || s.has('orders:write');
+        default: return false;
     }
 });
 
@@ -196,7 +200,7 @@ async function handleUpdateOrder(): Promise<boolean> {
             formError.value = 'Pesanan tidak ditemukan.';
         } else if (e instanceof ApiError && e.status === 409) {
             formError.value = 'Status pesanan sudah berubah — muat ulang daftar.';
-            await store.fetchOrders().catch(() => {});
+            await store.fetchOrders().catch(() => { });
         } else if (e instanceof ApiError) {
             formError.value = e.problem.detail;
         }

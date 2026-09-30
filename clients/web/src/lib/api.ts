@@ -662,7 +662,29 @@ export const cancelPayment = (id: string, etag?: string | null) =>
 
 declare global {
   interface Window {
-    __ocean?: { token: () => string | null; apiBase: () => string };
+    __ocean?: {
+      token: () => string | null;
+      apiBase: () => string;
+      /** Granted scopes decoded from the stored access token. */
+      scopes: () => string[];
+    };
+  }
+}
+
+function decodeStoredScopes(): string[] {
+  try {
+    const token = readToken();
+    if (!token) return [];
+    const [, payload] = token.split(".");
+    if (!payload) return [];
+    const claims = JSON.parse(
+      atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
+    ) as { scope?: unknown };
+    return String(claims.scope ?? "")
+      .split(" ")
+      .filter(Boolean);
+  } catch {
+    return [];
   }
 }
 
@@ -670,5 +692,10 @@ if (typeof window !== "undefined") {
   window.__ocean = {
     token: () => readToken(),
     apiBase: () => baseUrl(),
+    scopes: () => {
+      const s = decodeStoredScopes();
+      console.info("[ocean] granted scopes =", s);
+      return s;
+    },
   };
 }

@@ -13,7 +13,7 @@
     </v-alert>
 
     <div class="grid md:grid-cols-2 gap-4">
-      <v-card title="Customer — pesan & bayar" subtitle="Katalog → buat order → bayar → lacak" variant="outlined">
+      <v-card v-if="!session.isSignedIn || canOrder" title="Customer — pesan & bayar" subtitle="Katalog → buat order → bayar → lacak" variant="outlined">
         <v-card-text>GET /packages · POST /orders · GET /orders · POST /payments</v-card-text>
         <v-card-actions>
           <v-btn to="/catalogue" variant="outlined">Katalog</v-btn>
@@ -21,21 +21,21 @@
           <v-btn to="/orders" variant="text">Pesanan saya</v-btn>
         </v-card-actions>
       </v-card>
-      <v-card title="Kurir — jemput & antar" subtitle="Daftar order → pickup → delivery → complete" variant="outlined">
+      <v-card v-if="!session.isSignedIn || canDeliver" title="Kurir — jemput & antar" subtitle="Daftar order → pickup → delivery → complete" variant="outlined">
         <v-card-text>GET /orders · GET /orders/{id} · POST …/pickup · …/delivery · …/complete</v-card-text>
         <v-card-actions>
           <v-btn to="/pickups" variant="outlined">Penjemputan</v-btn>
           <v-btn to="/deliveries" variant="outlined">Pengantaran</v-btn>
         </v-card-actions>
       </v-card>
-      <v-card title="Staff — timbang → siap" subtitle="Weigh → wash → ready" variant="outlined">
+      <v-card v-if="!session.isSignedIn || canFulfil" title="Staff — timbang → siap" subtitle="Weigh → wash → ready" variant="outlined">
         <v-card-text>GET /orders?status=… · POST …/weigh · …/wash · …/ready</v-card-text>
         <v-card-actions>
           <v-btn to="/orders?status=picked_up" variant="outlined">Perlu ditimbang</v-btn>
           <v-btn to="/orders" variant="text">Semua order</v-btn>
         </v-card-actions>
       </v-card>
-      <v-card title="Staff — kelola katalog" subtitle="Tambah / ubah / hapus paket" variant="outlined">
+      <v-card v-if="!session.isSignedIn || canManagePackages" title="Staff — kelola katalog" subtitle="Tambah / ubah / hapus paket" variant="outlined">
         <v-card-text>GET /packages · POST · PATCH /packages/{id} · DELETE /packages/{id}</v-card-text>
         <v-card-actions><v-btn to="/packages" variant="outlined">Kelola</v-btn></v-card-actions>
       </v-card>
@@ -45,5 +45,13 @@
 
 <script setup lang="ts">
 import { useSessionStore } from '@/stores/session'
+import { computed } from 'vue'
 const session = useSessionStore()
+
+// Workflow cards mirror the drawer scopes (UX only, service enforces):
+// guests see everything as an overview, signed-in users only their own.
+const canOrder = computed(() => session.scopes.includes('orders:write'))
+const canDeliver = computed(() => session.scopes.includes('deliveries:write'))
+const canFulfil = computed(() => session.scopes.includes('orders:fulfil'))
+const canManagePackages = computed(() => session.scopes.includes('packages:write'))
 </script>

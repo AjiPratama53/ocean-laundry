@@ -6,6 +6,9 @@ import type { PaymentRow } from "../store/payments.js";
  * Who may read a single order:
  * - the customer who placed it
  * - the courier assigned to it (and who holds deliveries:write)
+ * - any courier (deliveries:write) for a 'placed' order with no courier
+ *   yet (the claim queue — mirrors mayClaimOrder plus the pickup status
+ *   precondition, so a courier can open the detail before claiming it)
  * - staff who may fulfil orders
  * - service accounts that need to read orders (e.g. the expiration job)
  */
@@ -13,6 +16,13 @@ export function mayReadOrder(p: Principal, order: OrderRow): boolean {
   if (order.customer_id === p.subject) return true;
   if (
     order.courier_id === p.subject &&
+    p.scopes.includes("deliveries:write")
+  ) {
+    return true;
+  }
+  if (
+    order.courier_id === null &&
+    order.status === "placed" &&
     p.scopes.includes("deliveries:write")
   ) {
     return true;

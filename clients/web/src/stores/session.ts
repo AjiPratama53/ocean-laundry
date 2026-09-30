@@ -85,6 +85,19 @@ export const useSessionStore = defineStore("session", () => {
     return passwordGrant(username.trim(), password).then((t) => {
       writeSession(t.access_token, t.refresh_token);
       token.value = t.access_token;
+      // Debug aid: log the GRANTED scopes (what the IdP actually gave,
+      // not what DOMAIN_SCOPES requested) so over-granted tokens are
+      // visible in devtools. Never logs the token itself.
+      try {
+        const granted = String(
+          (decodePayload(t.access_token) as { scope?: unknown } | null)?.scope ?? "",
+        )
+          .split(" ")
+          .filter(Boolean);
+        console.info(`[session] login as ${username.trim()}: granted scopes =`, granted);
+      } catch {
+        /* logging must never break login */
+      }
       // An explicit ?redirect= from the guard wins; otherwise home,
       // which links every workflow the token can open.
       const dest = redirect && redirect !== "/" ? redirect : "/";

@@ -1,6 +1,36 @@
-INSERT INTO packages (id, name, description, price) VALUES
-  ('pkg_001', 'Regular Wash', 'Cuci lipat 2 hari', 5000),
-  ('pkg_002', 'Express Wash', 'Cuci lipat 1 hari', 6000);
+INSERT INTO
+    packages (id, name, description, price)
+VALUES (
+        'pkg_001',
+        'Regular Wash',
+        'Cuci lipat 2 hari',
+        5000
+    ),
+    (
+        'pkg_002',
+        'Express Wash',
+        'Cuci lipat 1 hari',
+        6000
+    ),
+    (
+        'pkg_003',
+        'Rapid Wash',
+        'Cuci lipat 5 jam',
+        8000
+    );
 
-INSERT INTO orders (id, customer_id, package_id, pickup_address, status) VALUES
-  ('ord_001', 'cus_001', 'pkg_001', 'Jl. Kaliurang No. 10', 'placed');
+INSERT INTO
+    orders (
+        id,
+        customer_id,
+        package_id,
+        pickup_address,
+        status
+    )
+VALUES (
+        'ord_001',
+        'cus_001',
+        'pkg_001',
+        'Jl. Kaliurang No. 10',
+        'placed'
+    );

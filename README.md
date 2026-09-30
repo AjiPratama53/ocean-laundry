@@ -97,3 +97,13 @@ Sesuai ketentuan tugas (grader dapat menguji alur secara mandiri tanpa bantuan p
 > 2. Akun **Staff** dapat mengelola katalog paket, menimbang cucian (`POST /orders/{id}/weigh`), mencuci (`POST /orders/{id}/wash`), dan menandai cucian siap diambil (`POST /orders/{id}/ready`).
 > 3. Akun **Kurir** dapat mengambil cucian kotor dari customer (`POST /orders/{id}/pickup`), mengantar cucian bersih (`POST /orders/{id}/delivery`), dan menyelesaikan pengantaran (`POST /orders/{id}/complete`).
 > 4. Token akses JWT dapat diakses langsung pada console peramban via `window.__ocean.token()` untuk pengujian console attack (A.9).
+>
+> **Penting — enforcement scope di Keycloak:** client `test-cli` wajib `Full scope allowed = OFF`
+> dengan role `customer`/`staff`/`courier` yang dipetakan ke client-scope sesuai tabel di atas
+> (`infra/keycloak/ocean-laundry-realm.json`: `scopeMappings` + `groups`). Kalau full-scope ON,
+> setiap login mendapat semua 8 scope dan seluruh pembatasan menu/tombol + otorisasi service bocor.
+> `--import-realm` tidak menimpa realm yang sudah ada, jadi untuk Keycloak live (Railway) lakukan
+> manual via Admin Console: Clients → `test-cli` → Scope → Full scope allowed OFF; Realm roles →
+> buat `customer`/`staff`/`courier`; Client scopes → tiap scope domain → Assign to roles sesuai tabel;
+> Groups → `/customers`, `/staffs`, `/couriers` → beri role masing-masing; Users → masukkan
+> 6 akun uji ke group-nya. Lalu re-export realm dan commit agar repo = live.

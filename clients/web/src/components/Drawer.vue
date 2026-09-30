@@ -49,8 +49,13 @@ const displayName = computed(() => session.username || session.subject || (sessi
 const visibleItems = computed(() => {
     const have = new Set(session.scopes)
     const allowedItems = NAV_ITEMS.filter((item) => item.requiredAnyScopes.some((s) => have.has(s)))
+    // Dedup by destination + label: two entries may legitimately share
+    // one path (e.g. staff "Tracking & Riwayat" vs customer "Pesanan Saya"
+    // both point at /orders but are never visible to the same token, since
+    // their requiredAnyScopes are now disjoint). Deduping by `to` alone
+    // would silently drop one label.
     return allowedItems.filter((item, index) =>
-        allowedItems.findIndex((candidate) => candidate.to === item.to) === index,
+        allowedItems.findIndex((candidate) => candidate.to === item.to && candidate.title === item.title) === index,
     )
 })
 </script>
