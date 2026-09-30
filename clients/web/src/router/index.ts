@@ -2,7 +2,7 @@ import ForbiddenView from "@/views/ForbiddenView.vue";
 import Home from "@/views/Home.vue";
 import Login from "@/views/auth/Login.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
-import OrderDetailView from "@/views/customer/OrderDetailView.vue";
+import OrderDetailView from "@/views/OrderDetailView.vue";
 import OrderNewView from "@/views/customer/OrderNewView.vue";
 import CatalogueView from "@/views/customer/CatalogueView.vue";
 import PaymentView from "@/views/customer/Payment.vue";
@@ -72,13 +72,13 @@ export const NAV_ITEMS: NavItem[] = [
   {
     title: "Penjemputan",
     icon: "mdi-truck",
-    to: "/pickups",
+    to: "/orders?status=placed",
     requiredAnyScopes: ["orders:read", "deliveries:write"],
   },
   {
     title: "Pengantaran",
     icon: "mdi-package-variant-closed",
-    to: "/deliveries",
+    to: "/orders?status=ready",
     requiredAnyScopes: ["deliveries:write"],
   },
   {

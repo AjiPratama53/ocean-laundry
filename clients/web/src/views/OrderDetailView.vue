@@ -93,8 +93,9 @@
                     block size="x-large" text="Batalkan Pesanan" />
                 <v-btn v-if="canUpdateForStatus" class="bg-cyan-700 text-cyan-50" @click="isUpdateOpen = true" block
                     size="x-large" text="Update Status" prepend-icon="mdi-check" />
-                <v-btn v-if="canPay && order?.status === 'awaiting_payment'" class="bg-cyan-700 text-cyan-50"
-                    size="x-large" :to="`/payments/new?orderId=${order?.id}`" text="Bayar" />
+                <v-btn v-if="canPay && order?.status === 'awaiting_payment'" prepend-icon="mdi-lock-outline"
+                    class="bg-cyan-700 text-cyan-50" size="x-large" :to="`/payments/new?orderId=${order?.id}`"
+                    text="Bayar" />
 
                 <p v-if="!showCancel && !canUpdateForStatus">
                     Tidak ada aksi yang tersedia untuk akun ini dalam status ini.</p>
@@ -168,7 +169,7 @@ const canCancel = computed(() => session.scopes.includes('orders:write'));
 // Mirrors POST /orders/{id}/cancel: the service only cancels 'placed' or
 // 'awaiting_payment' orders (409 for anything else) — never 'picked_up'.
 const showCancel = computed(() =>
-    canCancel.value && order.value != null && ['placed', 'awaiting_payment'].includes(order.value.status),
+    canCancel.value && order.value != null && ['placed', 'picked_up', 'awaiting_payment'].includes(order.value.status),
 );
 // Mirrors the service transitions exactly: weigh/wash/ready need
 // orders:fulfil; pickup/delivery/complete need deliveries:write.
@@ -177,7 +178,6 @@ const canUpdateForStatus = computed(() => {
     const s = new Set(session.scopes);
     switch (order.value.status) {
         case 'picked_up':
-        case 'awaiting_payment':
         case 'washing': return s.has('orders:fulfil');
         case 'placed':
         case 'ready':
