@@ -21,25 +21,28 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Link Project and Pull Environment
-        working-directory: clients/web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         run: |
-          mkdir -p .vercel
-          echo "{\"projectId\":\"${VERCEL_PROJECT_ID}\",\"orgId\":\"${VERCEL_ORG_ID}\"}" > .vercel/project.json
-          echo "VERCEL_TOKEN=${VERCEL_TOKEN}" > .env.local
-          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          cd "$GITHUB_WORKSPACE"
+          vercel link --yes --project="$VERCEL_PROJECT_ID" --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+          vercel pull --yes --environment=production --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
 
       - name: Build Project Artifacts
-        working-directory: clients/web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel build --prod --token=$VERCEL_TOKEN
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          vercel build --prod --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
 
       - name: Deploy to Vercel
-        working-directory: clients/web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          vercel deploy --prebuilt --prod --scope="$VERCEL_ORG_ID" --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
