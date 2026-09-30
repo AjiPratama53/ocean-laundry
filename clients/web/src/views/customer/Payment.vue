@@ -100,7 +100,7 @@
                 class="w-full">{{
                     notPayableReason }}</v-alert>
             <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="w-full">{{ formError
-            }}</v-alert>
+                }}</v-alert>
             <span v-if="viewState.kind === 'content'" class=" flex gap-1 items-center">
                 <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
                 <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
@@ -270,7 +270,7 @@ async function handleNewPayment() {
             { orderId: order.value.id, amount: amount.value },
             idempotencyKey.value,
         );
-        await router.push(`/customer/payments/${r.data.id}`);
+        await router.push(`/payments/${r.data.id}`);
     } catch (e) {
         if (e instanceof ApiError && (e.status === 400 || e.status === 422)) {
             // This backend 422 carries no invalid-params extension for an

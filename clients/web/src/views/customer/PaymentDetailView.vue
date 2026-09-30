@@ -14,16 +14,11 @@
         <v-icon icon="mdi-receipt-text-remove-outline" size="80" class="text-gray-300" />
         <h1 class="font-bold text-2xl text-gray-500">Pembayaran tidak ditemukan</h1>
         <p class="text-gray-400">Nota ini tidak ada atau tidak dapat diakses dengan akun ini.</p>
-        <v-btn variant="outlined" to="/customer/catalogue" text="Kembali ke Katalog" />
+        <v-btn variant="outlined" to="/catalogue" text="Kembali ke Katalog" />
     </v-col>
 
     <!-- error (403, 5xx, network) — explain in domain terms, never send to sign-in for 403 (A.3.2) -->
-    <customer-error
-        v-else-if="state.kind === 'error'"
-        :problem="problem"
-        :status="status"
-        @retry="load"
-    />
+    <customer-error v-else-if="state.kind === 'error'" :problem="problem" :status="status" @retry="load" />
 
     <!-- content -->
     <v-col v-else class="flex flex-col gap-4">
@@ -61,12 +56,8 @@
             <v-divider />
             <v-row class="flex justify-between items-center">
                 <p>ID Order</p>
-                <v-btn
-                    variant="text"
-                    class="text-cyan-700 font-mono text-sm"
-                    :to="`/customer/orders/${payment?.orderId}`"
-                    :text="payment?.orderId ?? '—'"
-                />
+                <v-btn variant="text" class="text-cyan-700 font-mono text-sm"
+                    :to="`/customer/orders/${payment?.orderId}`" :text="payment?.orderId ?? '—'" />
             </v-row>
             <v-divider />
             <v-row class="flex justify-between items-center p-4 bg-blue-100 rounded-xl">
@@ -88,16 +79,8 @@
 
         <!-- Proceed button — only for pending payments with payments:write scope (UX; service still enforces, A.9) -->
         <v-col v-if="payment?.status === 'pending' && canProceed" class="flex flex-col items-center gap-2">
-            <v-btn
-                class="bg-cyan-700 text-cyan-50"
-                block
-                size="x-large"
-                prepend-icon="mdi-lock-outline"
-                text="Konfirmasi Pembayaran"
-                :loading="acting"
-                :disabled="acting"
-                @click="proceed"
-            />
+            <v-btn class="bg-cyan-700 text-cyan-50" block size="x-large" prepend-icon="mdi-lock-outline"
+                text="Konfirmasi Pembayaran" :loading="acting" :disabled="acting" @click="proceed" />
             <span class="flex gap-1 items-center">
                 <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
                 <p class="text-sm">Garansi 100% Pakaian Bersih, Rapi &amp; Ganti Rugi Kerusakan</p>
@@ -106,7 +89,7 @@
 
         <!-- Back link -->
         <v-btn variant="text" prepend-icon="mdi-arrow-left" text="Kembali ke pesanan"
-            :to="payment?.orderId ? `/customer/orders/${payment.orderId}` : '/customer/catalogue'" />
+            :to="payment?.orderId ? `/orders/${payment.orderId}` : '/catalogue'" />
     </v-col>
 </template>
 
