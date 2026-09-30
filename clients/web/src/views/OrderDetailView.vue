@@ -184,8 +184,8 @@ const canUpdateForStatus = computed(() => {
         case 'ready':
         case 'delivering': return s.has('deliveries:write');
         case 'picked_up':
-        case 'weighed':
-        case 'awaiting_payment':
+        // case 'weighed':
+        // case 'awaiting_payment':
         case 'washing': return s.has('orders:fulfil');
         default: return false;
     }

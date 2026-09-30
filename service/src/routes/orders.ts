@@ -7,7 +7,6 @@ import {
   mayFulfilOrder,
   mayDeliverOrder,
   mayClaimOrder,
-
 } from "../auth/ownership.js";
 import {
   orderIdParamSchema,
@@ -20,7 +19,7 @@ import {
   findOrdersForPrincipal,
   packageExists,
   updateOrderStatus,
-  assignCourierAndUpdateStatus
+  assignCourierAndUpdateStatus,
 } from "../store/orders.js";
 import { toOrderResponse } from "../representations/orders.js";
 import { problem } from "../problem.js";
@@ -45,18 +44,22 @@ const isUuid = (s: string) => z.string().uuid().safeParse(s).success;
 
 // GET /v1/orders/{orderId}
 ordersRouter.get(
-  "/orders/:orderId", 
+  "/orders/:orderId",
   requireScope("orders:read"),
   async (req, res) => {
-    
     // 2. Validation
     const parsed = orderIdParamSchema.safeParse(req.params);
     if (!parsed.success) {
       return res
         .status(400)
         .json(
-          problem(400, "validation-error", "Invalid order id", req.originalUrl,
-            invalidParams(parsed.error.issues)),
+          problem(
+            400,
+            "validation-error",
+            "Invalid order id",
+            req.originalUrl,
+            invalidParams(parsed.error.issues),
+          ),
         );
     }
 
@@ -72,183 +75,175 @@ ordersRouter.get(
     const body = toOrderResponse(row);
     sendConditional(req, res, body, orderVersion(row));
     return;
-  }
+  },
 );
 
 // GET /v1/orders
-ordersRouter.get(
-  "/orders", 
-  requireScope("orders:read"),
-  async (req, res) => {
-    // 2. Validation
-    const parsed = getOrdersQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json(
-          problem(
-            400,
-            "validation-error",
-            "Invalid query parameters",
-            req.originalUrl,
-            invalidParams(parsed.error.issues),
-          ),
-        );
-    }
-
-    // 3. Work
-    const rows = await findOrdersForPrincipal(req.principal!, parsed.data);
-
-    // 4. Representation + 5. Response (conditional read, A.7)
-    const body = rows.map(toOrderResponse);
-    sendConditional(req, res, body, etagFor(body));
-    return;
+ordersRouter.get("/orders", requireScope("orders:read"), async (req, res) => {
+  // 2. Validation
+  const parsed = getOrdersQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res
+      .status(400)
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "Invalid query parameters",
+          req.originalUrl,
+          invalidParams(parsed.error.issues),
+        ),
+      );
   }
-);
+
+  // 3. Work
+  const rows = await findOrdersForPrincipal(req.principal!, parsed.data);
+
+  // 4. Representation + 5. Response (conditional read, A.7)
+  const body = rows.map(toOrderResponse);
+  sendConditional(req, res, body, etagFor(body));
+  return;
+});
 
 // POST /v1/orders
-ordersRouter.post(
-  "/orders",
-  requireScope("orders:write"), 
-  async (req, res) => {
-    // 2. Validation
-    const parsed = createOrderSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json(
-          problem(
-            400,
-            "validation-error",
-            "Invalid request body",
-            req.originalUrl,
-            invalidParams(parsed.error.issues),
-          ),
-        );
-    }
-
-    const idempotencyKey = req.header("Idempotency-Key");
-
-    // Only end-users may create orders; service accounts (e.g. the expiration job)
-    // may only cancel existing orders.
-    if (req.principal!.kind !== "user") {
-      return res
-        .status(403)
-        .json(
-          problem(
-            403,
-            "insufficient-scope",
-            "Only authenticated users may create orders",
-            req.originalUrl,
-          ),
-        );
-    }
-
-    // The order must be placed on behalf of the authenticated principal.
-    if (parsed.data.customerId !== req.principal!.subject) {
-      return res
-        .status(400)
-        .json(
-          problem(
-            400,
-            "validation-error",
-            "customerId does not match the authenticated user",
-            req.originalUrl,
-          ),
-        );
-    }
-
-    // Idempotency-Key missing / malformed
-    if (!idempotencyKey || !isUuid(idempotencyKey)) {
-      return res
-        .status(400)
-        .json(
-          problem(
-            400,
-            "validation-error",
-            "Invalid or missing Idempotency-Key",
-            req.originalUrl,
-          ),
-        );
-    }
-
-    const orderInput = {
-      ...parsed.data,
-      customerId: req.principal!.subject,
-    };
-
-    const bodyHash = hashBody(req.body);
-
-    const existingKey = await findKey(idempotencyKey);
-    if (existingKey) {
-      // Key sama tetapi request body berbeda
-      if (existingKey.bodyHash !== bodyHash) {
-        return res
-          .status(409)
-          .json(
-            problem(
-              409,
-              "idempotency-key-reuse",
-              "Idempotency-Key was already used with a different request body",
-              req.originalUrl,
-            ),
-          );
-      }
-
-      // Key dan request body sama
-      // Kembalikan response sebelumnya
-      return res
-        .status(existingKey.responseStatus)
-        .json(existingKey.responseBody);
-    }
-
-    if (!(await packageExists(parsed.data.packageId))) {
-      return res
-        .status(422)
-        .json(
-          problem(
-            422,
-            "validation-error",
-            "packageId does not reference an existing package",
-            req.originalUrl,
-          ),
-        );
-    }
-
-    try {
-      // 3. Work
-      const newOrder = await createOrder(orderInput);
-
-      // 4. Representation
-      const responseBody = toOrderResponse(newOrder);
-
-      await saveKey({
-        key: idempotencyKey,
-        bodyHash,
-        responseStatus: 201,
-        responseBody,
-      });
-
-      res.setHeader("Location", `/v1/orders/${newOrder.id}`);
-      res.setHeader("ETag", orderVersion(newOrder));
-
-      // 5. Response
-      return res.status(201).json(responseBody);
-    } catch (error) {
-      req.log.error({ err: error }, "Error creating order");
-      return res
-        .status(500)
-        .json(
-          problem(
-            500,
-            "internal-server-error",
-            "Failed to create order",
-            req.originalUrl,
-          ),
-        );
-    }
+ordersRouter.post("/orders", requireScope("orders:write"), async (req, res) => {
+  // 2. Validation
+  const parsed = createOrderSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res
+      .status(400)
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "Invalid request body",
+          req.originalUrl,
+          invalidParams(parsed.error.issues),
+        ),
+      );
   }
-);
+
+  const idempotencyKey = req.header("Idempotency-Key");
+
+  // Only end-users may create orders; service accounts (e.g. the expiration job)
+  // may only cancel existing orders.
+  if (req.principal!.kind !== "user") {
+    return res
+      .status(403)
+      .json(
+        problem(
+          403,
+          "insufficient-scope",
+          "Only authenticated users may create orders",
+          req.originalUrl,
+        ),
+      );
+  }
+
+  // The order must be placed on behalf of the authenticated principal.
+  if (parsed.data.customerId !== req.principal!.subject) {
+    return res
+      .status(400)
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "customerId does not match the authenticated user",
+          req.originalUrl,
+        ),
+      );
+  }
+
+  // Idempotency-Key missing / malformed
+  if (!idempotencyKey || !isUuid(idempotencyKey)) {
+    return res
+      .status(400)
+      .json(
+        problem(
+          400,
+          "validation-error",
+          "Invalid or missing Idempotency-Key",
+          req.originalUrl,
+        ),
+      );
+  }
+
+  const orderInput = {
+    ...parsed.data,
+    customerId: req.principal!.subject,
+  };
+
+  const bodyHash = hashBody(req.body);
+
+  const existingKey = await findKey(idempotencyKey);
+  if (existingKey) {
+    // Key sama tetapi request body berbeda
+    if (existingKey.bodyHash !== bodyHash) {
+      return res
+        .status(409)
+        .json(
+          problem(
+            409,
+            "idempotency-key-reuse",
+            "Idempotency-Key was already used with a different request body",
+            req.originalUrl,
+          ),
+        );
+    }
+
+    // Key dan request body sama
+    // Kembalikan response sebelumnya
+    return res
+      .status(existingKey.responseStatus)
+      .json(existingKey.responseBody);
+  }
+
+  if (!(await packageExists(parsed.data.packageId))) {
+    return res
+      .status(422)
+      .json(
+        problem(
+          422,
+          "validation-error",
+          "packageId does not reference an existing package",
+          req.originalUrl,
+        ),
+      );
+  }
+
+  try {
+    // 3. Work
+    const newOrder = await createOrder(orderInput);
+
+    // 4. Representation
+    const responseBody = toOrderResponse(newOrder);
+
+    await saveKey({
+      key: idempotencyKey,
+      bodyHash,
+      responseStatus: 201,
+      responseBody,
+    });
+
+    res.setHeader("Location", `/v1/orders/${newOrder.id}`);
+    res.setHeader("ETag", orderVersion(newOrder));
+
+    // 5. Response
+    return res.status(201).json(responseBody);
+  } catch (error) {
+    req.log.error({ err: error }, "Error creating order");
+    return res
+      .status(500)
+      .json(
+        problem(
+          500,
+          "internal-server-error",
+          "Failed to create order",
+          req.originalUrl,
+        ),
+      );
+  }
+});
 
 // POST /v1/orders/{orderId}/pickup
 ordersRouter.post(
@@ -259,7 +254,9 @@ ordersRouter.post(
     if (!parsed.success) {
       return res
         .status(400)
-        .json(problem(400, "validation-error", "Invalid order id", req.originalUrl));
+        .json(
+          problem(400, "validation-error", "Invalid order id", req.originalUrl),
+        );
     }
 
     const order = await findOrderById(parsed.data.orderId);
@@ -275,10 +272,21 @@ ordersRouter.post(
     if (order.status !== "placed") {
       return res
         .status(409)
-        .json(problem(409, "conflict", `Order status must be 'placed' to pick up, current status: ${order.status}`, req.originalUrl));
+        .json(
+          problem(
+            409,
+            "conflict",
+            `Order status must be 'placed' to pick up, current status: ${order.status}`,
+            req.originalUrl,
+          ),
+        );
     }
 
-    const updated = await assignCourierAndUpdateStatus(order.id, req.principal!.subject, "picked_up");
+    const updated = await assignCourierAndUpdateStatus(
+      order.id,
+      req.principal!.subject,
+      "picked_up",
+    );
     if (!updated) {
       return res
         .status(409)
@@ -373,47 +381,47 @@ ordersRouter.post(
 );
 
 // POST	/v1/orders/{orderId}/wash
-ordersRouter.post(
-  "/orders/:orderId/wash",
-  requireScope("orders:fulfil"),
-  async (req: Request, res: Response) => {
-    const parsed = orderIdParamSchema.safeParse(req.params);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json(
-          problem(400, "validation-error", "Invalid order id", req.originalUrl),
-        );
-    }
+// ordersRouter.post(
+//   "/orders/:orderId/wash",
+//   requireScope("orders:fulfil"),
+//   async (req: Request, res: Response) => {
+//     const parsed = orderIdParamSchema.safeParse(req.params);
+//     if (!parsed.success) {
+//       return res
+//         .status(400)
+//         .json(
+//           problem(400, "validation-error", "Invalid order id", req.originalUrl),
+//         );
+//     }
 
-    const order = await findOrderById(parsed.data.orderId);
-    if (!order || !mayFulfilOrder(req.principal!, order)) {
-      return res
-        .status(404)
-        .json(problem(404, "not-found", "Order not found", req.originalUrl));
-    }
+//     const order = await findOrderById(parsed.data.orderId);
+//     if (!order || !mayFulfilOrder(req.principal!, order)) {
+//       return res
+//         .status(404)
+//         .json(problem(404, "not-found", "Order not found", req.originalUrl));
+//     }
 
-    // Conditional write (A.8): refuse stale preconditions with 412.
-    if (checkPrecondition(req, res, orderVersion(order))) return;
+//     // Conditional write (A.8): refuse stale preconditions with 412.
+//     if (checkPrecondition(req, res, orderVersion(order))) return;
 
-    if (order.status !== "awaiting_payment") {
-      return res
-        .status(409)
-        .json(
-          problem(
-            409,
-            "conflict",
-            `Order status must be 'awaiting_payment' to wash, current status: ${order.status}`,
-            req.originalUrl,
-          ),
-        );
-    }
+//     if (order.status !== "awaiting_payment") {
+//       return res
+//         .status(409)
+//         .json(
+//           problem(
+//             409,
+//             "conflict",
+//             `Order status must be 'awaiting_payment' to wash, current status: ${order.status}`,
+//             req.originalUrl,
+//           ),
+//         );
+//     }
 
-    const updated = await updateOrderStatus(order.id, "washing");
-    if (updated) res.set("ETag", orderVersion(updated));
-    return res.status(200).json(toOrderResponse(updated));
-  },
-);
+//     const updated = await updateOrderStatus(order.id, "washing");
+//     if (updated) res.set("ETag", orderVersion(updated));
+//     return res.status(200).json(toOrderResponse(updated));
+//   },
+// );
 
 // POST	/v1/orders/{orderId}/ready
 ordersRouter.post(

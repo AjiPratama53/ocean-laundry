@@ -617,8 +617,8 @@ export const weighOrder = (
   weightGrams: number,
   etag?: string | null,
 ) => transition(id, "weigh", { weightGrams }, etag);
-export const washOrder = (id: string, etag?: string | null) =>
-  transition(id, "wash", {}, etag);
+// export const washOrder = (id: string, etag?: string | null) =>
+//   transition(id, "wash", {}, etag);
 export const readyOrder = (id: string, etag?: string | null) =>
   transition(id, "ready", {}, etag);
 export const deliverOrder = (id: string, etag?: string | null) =>
@@ -648,12 +648,18 @@ export function getPaymentConditional(id: string, etag?: string | null) {
   });
 }
 
-
 export const proceedPayment = (id: string, etag?: string | null) =>
-  call<Payment>(`/payments/${encodeURIComponent(id)}/proceed`, { method: "POST", withPrecondition: true, etag: etag ?? undefined });
+  call<Payment>(`/payments/${encodeURIComponent(id)}/proceed`, {
+    method: "POST",
+    withPrecondition: true,
+    etag: etag ?? undefined,
+  });
 export const cancelPayment = (id: string, etag?: string | null) =>
-  call<Payment>(`/payments/${encodeURIComponent(id)}/cancel`, { method: "POST", withPrecondition: true, etag: etag ?? undefined });
-
+  call<Payment>(`/payments/${encodeURIComponent(id)}/cancel`, {
+    method: "POST",
+    withPrecondition: true,
+    etag: etag ?? undefined,
+  });
 
 /* ------------------------------------------------------------------ */
 /* Console-attack surface (A.9): expose the bearer token like the      */
