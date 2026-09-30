@@ -105,7 +105,7 @@ const nextActionLabel = computed(() => {
     switch (props.order?.status) {
         case 'placed': return 'Pickup (kurir)';
         case 'picked_up': return 'Timbang (staff)';
-        case 'weighed': return 'Muat ulang — menunggu bayar';
+        case 'weighed': return 'Cuci (staff)';
         case 'awaiting_payment': return 'Menunggu pembayaran customer';
         case 'washing': return 'Tandai siap';
         case 'ready': return 'Antar (kurir)';
@@ -121,6 +121,7 @@ const canAct = computed(() => {
     switch (props.order?.status) {
         case 'placed': return s.has('deliveries:write');
         case 'picked_up':
+        case 'weighed':
         case 'washing': return s.has('orders:fulfil');
         case 'ready':
         case 'delivering': return s.has('deliveries:write');
@@ -157,6 +158,7 @@ async function handleUpdateOrder(): Promise<boolean> {
         switch (props.order.status) {
             case 'placed': await store.pickup(id, etag.value); break;
             case 'picked_up': await store.weigh(id, inputWeight.value!, etag.value); break;
+            case 'weighed': await store.wash(id, etag.value); break;
             case 'washing': await store.ready(id, etag.value); break;
             case 'ready': await store.deliver(id, etag.value); break;
             case 'delivering': await store.complete(id, etag.value); break;
