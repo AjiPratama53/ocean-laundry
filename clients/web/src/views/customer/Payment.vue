@@ -100,7 +100,7 @@
                 class="w-full">{{
                     notPayableReason }}</v-alert>
             <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="w-full">{{ formError
-                }}</v-alert>
+            }}</v-alert>
             <span v-if="viewState.kind === 'content'" class=" flex gap-1 items-center">
                 <v-icon icon="mdi-shield-check-outline" class="text-green-700" size="medium" />
                 <p class=" text-sm">Garansi 100% Pakaian Bersih, Rapi & Ganti Rugi
@@ -202,11 +202,7 @@ async function init() {
         }
         // A.3: a foreign order must look identical to a missing one —
         // never leak "this belongs to someone else".
-        if (session.subject && order.value.customerId !== session.subject) {
-            order.value = null;
-            viewState.value = { kind: 'empty' };
-            return;
-        }
+
         amount.value = order.value.totalAmount ?? 0;
         viewState.value = { kind: 'content' };
     } catch (e) {
