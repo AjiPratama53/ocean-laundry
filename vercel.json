@@ -1,13 +1,26 @@
 {
     "services": {
+        "web": {
+            "root": "clients/web"
+        },
         "service": {
             "root": "service",
             "framework": "express",
             "entrypoint": "src/app.ts"
+        },
+        "auth": {
+            "root": "infra",
+            "entrypoint": "Dockerfile.vercel"
         }
     },
     "rewrites": [
-        { 
+        {
+            "source": "/auth/(.*)",
+            "destination": {
+                "service": "auth"
+            }
+        },
+        {
             "source": "/v1/(.*)", 
             "destination": { 
                 "service": "service"
@@ -17,6 +30,12 @@
             "source": "/health", 
             "destination": { 
                 "service": "service"
+            }
+        },
+        {
+            "source": "/(.*)",
+            "destination": {
+                "service": "web"
             }
         }
     ]
