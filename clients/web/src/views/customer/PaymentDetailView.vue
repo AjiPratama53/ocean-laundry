@@ -226,8 +226,8 @@ async function proceed() {
     } catch (e) {
         if (e instanceof ApiError && e.status === 412) {
             // A.8.2: somebody else wrote first — refresh + explain in domain terms.
-            actionNote.value = 'Pembayaran ini sudah diproses pihak lain — menampilkan data terbaru.'
             await load()
+            actionNote.value = 'Pembayaran ini sudah diproses pihak lain — menampilkan data terbaru.'
         } else if (e instanceof ApiError && e.status === 403) {
             actionNote.value = 'Akun ini tidak diizinkan mengonfirmasi pembayaran ini.'
         } else if (e instanceof ApiError) {

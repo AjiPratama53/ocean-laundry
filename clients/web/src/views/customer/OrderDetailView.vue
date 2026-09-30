@@ -114,7 +114,7 @@
 import CustomerError from '@/components/customer/CustomerError.vue';
 import OrderEmpty from '@/components/OrderEmpty.vue';
 import DeleteDialog from '@/components/staff/DeleteDialog.vue';
-import OrderDialog from '@/components/staff/OrderDialog .vue';
+import OrderDialog from '@/components/staff/OrderDialog.vue';
 import { ApiError, getPackageConditional, type Order, type OrderStatus, type Package, type Problem } from '@/lib/api';
 import formatBalance from '@/lib/formatPrice';
 import { useOrderStore } from '@/stores/orderStore';
@@ -247,8 +247,8 @@ async function doCancel() {
         await load();
     } catch (e) {
         if (e instanceof ApiError && e.status === 412) {
-            actionNote.value = 'Pesanan ini sudah ditangani pihak lain — menampilkan data terbaru.';
             await load();
+            actionNote.value = 'Pesanan ini sudah ditangani pihak lain — menampilkan data terbaru.';
         } else if (e instanceof ApiError) {
             actionNote.value = e.problem.detail;
         } else {

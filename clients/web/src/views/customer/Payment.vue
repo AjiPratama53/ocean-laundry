@@ -1,6 +1,6 @@
 <template>
 
-    <order-empty is-customer v-if="viewState.kind === 'empty'" />
+    <order-empty :can-order="true" v-if="viewState.kind === 'empty'" />
     <customer-error v-else-if="viewState.kind === 'error'" :problem="loadProblem" :status="loadStatus" @retry="init" />
     <v-col v-else class="flex flex-col gap-4">
 
