@@ -85,7 +85,14 @@ export async function findOrdersForPrincipal(
   if (!canSeeAll) {
     if (p.scopes.includes("deliveries:write")) {
       values.push(p.subject);
-      conditions.push(`courier_id = $${values.length}`);
+      if (params.status === "placed") {
+        // Pickup queue: show all placed orders with no courier yet (available to claim)
+        // plus any placed orders already assigned to this courier
+        conditions.push(`(courier_id = $${values.length} OR courier_id IS NULL)`);
+      } else {
+        // Delivery queue or general view: only orders assigned to this courier
+        conditions.push(`courier_id = $${values.length}`);
+      }
     } else {
       values.push(p.subject);
       conditions.push(`customer_id = $${values.length}`);

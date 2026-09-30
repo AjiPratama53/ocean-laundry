@@ -247,8 +247,8 @@ async function doCancel() {
         await load();
     } catch (e) {
         if (e instanceof ApiError && e.status === 412) {
-            actionNote.value = 'Pesanan ini sudah ditangani pihak lain — menampilkan data terbaru.';
             await load();
+            actionNote.value = 'Pesanan ini sudah ditangani pihak lain — menampilkan data terbaru.';
         } else if (e instanceof ApiError) {
             actionNote.value = e.problem.detail;
         } else {

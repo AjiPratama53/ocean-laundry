@@ -186,8 +186,8 @@ async function handleSave(): Promise<boolean> {
             if (!applyInvalidParams(e)) formError.value = e.problem.detail || 'Data belum valid — periksa lagi.';
         } else if (e instanceof ApiError && e.status === 412) {
             // A.8.2: 412 is normal — somebody else wrote first.
-            formError.value = 'Paket ini baru saja diubah rekan — data terbaru dimuat ulang. Periksa lagi lalu simpan.';
             await loadForEdit();
+            formError.value = 'Paket ini baru saja diubah rekan — data terbaru dimuat ulang. Periksa lagi lalu simpan.';
             await store.fetchPackages().catch(() => { });
         } else if (e instanceof ApiError && e.status === 403) {
             formError.value = 'Akun ini tidak diizinkan mengubah paket.';
