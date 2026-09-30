@@ -1,7 +1,16 @@
 {
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "cleanUrls": false,
     "services": {
         "web": {
-            "root": "clients/web"
+            "root": "clients/web",
+            "outputDirectory": "dist",
+            "rewrites": [
+                {
+                    "source": "/(.*)",
+                    "destination": "/index.html"
+                }
+            ]
         },
         "service": {
             "root": "service",
@@ -21,14 +30,14 @@
             }
         },
         {
-            "source": "/v1/(.*)", 
-            "destination": { 
+            "source": "/v1/(.*)",
+            "destination": {
                 "service": "service"
             }
         },
-        { 
-            "source": "/health", 
-            "destination": { 
+        {
+            "source": "/health",
+            "destination": {
                 "service": "service"
             }
         },
