@@ -157,7 +157,8 @@ async function handleUpdateOrder(): Promise<boolean> {
     isUpdatingOrder.value = true;
     try {
         const id = props.order.id;
-        switch (props.order.status) {
+        const statusBefore = props.order.status;
+        switch (statusBefore) {
             case 'placed': await store.pickup(id, etag.value); break;
             case 'picked_up': await store.weigh(id, inputWeight.value!, etag.value); break;
             case 'weighed':
@@ -173,18 +174,38 @@ async function handleUpdateOrder(): Promise<boolean> {
         return true;
     } catch (e) {
         if (e instanceof ApiError && e.status === 412) {
-            // A.8.2: somebody else wrote first — refresh the individual order so
-            // the dialog re-renders with the *current* status, then explain in
-            // domain terms. Keep the dialog open: the user must see both the
-            // fresh status and the explanation before deciding what to do next.
-            formError.value = 'Pesanan ini sudah ditangani rekan — data terbaru dimuat. Periksa status baru sebelum mengulang.';
-            // Refresh the individual order so its status card updates in-place.
+            // A.8.2: somebody else wrote first — refresh the individual order,
+            // then retry once if the status hasn't changed (auto-retry). If the
+            // status *did* change, show the domain message and keep the dialog open.
             const fresh = await store.fetchOrder(props.order.id, null).catch(() => null);
             if (fresh && !fresh.notModified && fresh.data) {
                 store.upsert(fresh.data);
                 etag.value = fresh.etag;
             }
-            // Also refresh the parent list so the queue stays in sync.
+            // Auto-retry: if the order is still in the same status, try once more.
+            if (fresh && !fresh.notModified && fresh.data && fresh.data.status === props.order.status) {
+                try {
+                    const id = props.order.id;
+                    switch (props.order.status) {
+                        case 'placed': await store.pickup(id, etag.value); break;
+                        case 'picked_up': await store.weigh(id, inputWeight.value!, etag.value); break;
+                        case 'weighed':
+                        case 'awaiting_payment': await store.wash(id, etag.value); break;
+                        case 'washing': await store.ready(id, etag.value); break;
+                        case 'ready': await store.deliver(id, etag.value); break;
+                        case 'delivering': await store.complete(id, etag.value); break;
+                    }
+                    emit('done');
+                    return true;
+                } catch (retryErr) {
+                    if (retryErr instanceof ApiError && retryErr.status === 412) {
+                        // Still conflicting — fall through to the message below.
+                    } else {
+                        throw retryErr;
+                    }
+                }
+            }
+            formError.value = 'Pesanan ini sudah ditangani rekan — data terbaru dimuat. Periksa status baru sebelum mengulang.';
             emit('done');
         } else if (e instanceof ApiError && (e.status === 400 || e.status === 422)) {
             const first = e.problem['invalid-params']?.[0];
