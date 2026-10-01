@@ -86,6 +86,15 @@ export const NAV_ITEMS: NavItem[] = [
     requiredAnyScopes: ["deliveries:write"],
   },
   {
+    title: "Penyelesaian",
+    icon: "mdi-check-circle-outline",
+    to: "/completions",
+    // Courier-only queue: orders being delivered, ready to complete.
+    // Staff/customer tokens hold no deliveries:write, so this entry
+    // (and its route below) never shows for them.
+    requiredAnyScopes: ["deliveries:write"],
+  },
+  {
     title: "Katalog Laundry",
     icon: "mdi-archive-outline",
     to: "/catalogue",
@@ -188,6 +197,17 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/deliveries",
     name: "courier-deliveries",
+    component: OrdersView,
+    meta: {
+      requiresAuth: true,
+      requiredAnyScopes: ["deliveries:write"],
+    },
+  },
+  // Courier completion queue: delivering orders assigned to the courier,
+  // each completable via the shared detail (deliveries:write = complete).
+  {
+    path: "/completions",
+    name: "courier-completions",
     component: OrdersView,
     meta: {
       requiresAuth: true,

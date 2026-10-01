@@ -129,12 +129,13 @@ const statusOptions: Array<{ title: string; value: OrderStatus }> = [
 const heading = computed(() => {
     if (route.path.startsWith('/pickups')) return 'Penjemputan';
     if (route.path.startsWith('/deliveries')) return 'Pengantaran';
+    if (route.path.startsWith('/completions')) return 'Penyelesaian';
     if (statusFilter.value === 'picked_up') return 'Perlu Ditimbang';
     return 'Daftar Pesanan';
 });
 
 const subheading = computed(() => {
-    if (route.path.startsWith('/pickups') || route.path.startsWith('/deliveries'))
+    if (route.path.startsWith('/pickups') || route.path.startsWith('/deliveries') || route.path.startsWith('/completions'))
         return 'Kelola penjemputan & pengantaran.';
     return 'Lacak dan kelola pesanan.';
 });
@@ -155,6 +156,7 @@ function detailTo(id: string): string {
 function currentStatus(): OrderStatus | undefined {
     if (route.path === '/pickups') return 'placed';
     if (route.path === '/deliveries') return 'ready';
+    if (route.path === '/completions') return 'delivering';
     return statusFilter.value ?? undefined;
 }
 
@@ -202,11 +204,20 @@ watch(() => route.query.status, (s) => {
     void load();
 });
 
-watch(() => route.path, () => void load());
+watch(() => route.path, (p) => {
+    // Dedicated courier queues reuse this component across routes: keep the
+    // status dropdown in sync with the queue (generic /orders keeps the
+    // user's manual filter untouched).
+    if (p === '/pickups') statusFilter.value = 'placed';
+    else if (p === '/deliveries') statusFilter.value = 'ready';
+    else if (p === '/completions') statusFilter.value = 'delivering';
+    void load();
+});
 
 onMounted(async () => {
     if (route.path === '/pickups') statusFilter.value = 'placed';
     if (route.path === '/deliveries') statusFilter.value = 'ready';
+    if (route.path === '/completions') statusFilter.value = 'delivering';
     await load();
     timer = setInterval(load, pollInterval());
 });

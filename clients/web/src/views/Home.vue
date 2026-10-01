@@ -26,6 +26,7 @@
         <v-card-actions>
           <v-btn to="/pickups" variant="outlined">Penjemputan</v-btn>
           <v-btn to="/deliveries" variant="outlined">Pengantaran</v-btn>
+          <v-btn to="/completions" variant="outlined">Penyelesaian</v-btn>
         </v-card-actions>
       </v-card>
       <v-card v-if="!session.isSignedIn || canFulfil" title="Staff — timbang → siap" subtitle="Weigh → wash → ready" variant="outlined">
