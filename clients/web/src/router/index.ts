@@ -253,6 +253,21 @@ const router = createRouter({
   routes,
 });
 
+/**
+ * Role home derived from granted scopes (no role concept in the client —
+ * the same scope markers the drawer uses): customer (orders:write) lands
+ * on the catalogue, staff (orders:fulfil) on the order queue, courier
+ * (deliveries:write) on pickups. Unknown scope sets fall back to the
+ * dashboard, which gates every card by scope anyway.
+ */
+export function homeFor(scopes: string[]): string {
+  const have = new Set(scopes);
+  if (have.has("orders:write")) return "/catalogue";
+  if (have.has("orders:fulfil")) return "/orders";
+  if (have.has("deliveries:write")) return "/pickups";
+  return "/";
+}
+
 function readScopes(): string[] {
   try {
     const raw = localStorage.getItem("ocean.session");
@@ -273,11 +288,26 @@ function readScopes(): string[] {
 }
 
 router.beforeEach((to) => {
+  // Landing ('/') always redirects: guests to sign-in, signed-in users to
+  // their role home (catalogue / order queue / pickups by granted scope).
+  if (to.path === "/") {
+    try {
+      if (!localStorage.getItem("ocean.session")) return { path: "/login" };
+    } catch {
+      return { path: "/login" };
+    }
+    // homeFor falls back to "/" for marker-less tokens: stay instead of
+    // redirecting to self (infinite loop) — the dashboard gates by scope.
+    const home = homeFor(readScopes());
+    if (home === "/") return true;
+    return { path: home };
+  }
   if (!to.meta.requiresAuth) {
-    // Signed-in users hitting /login go home (keep their session).
+    // Signed-in users hitting /login go to their role home (keep session).
     if (to.path === "/login") {
       try {
-        if (localStorage.getItem("ocean.session")) return { path: "/" };
+        if (localStorage.getItem("ocean.session"))
+          return { path: homeFor(readScopes()) };
       } catch {
         /* storage unreadable -> show login */
       }

@@ -9,6 +9,7 @@ import {
   registerUnauthorizedHandler,
   writeSession,
 } from "@/lib/api";
+import { homeFor } from "@/router";
 
 function decodePayload(token: string): Record<string, unknown> | null {
   try {
@@ -85,11 +86,12 @@ export const useSessionStore = defineStore("session", () => {
     return passwordGrant(username.trim(), password).then((t) => {
       writeSession(t.access_token, t.refresh_token);
       token.value = t.access_token;
-      // Debug aid: log the GRANTED scopes (what the IdP actually gave,
-      // not what DOMAIN_SCOPES requested) so over-granted tokens are
-      // visible in devtools. Never logs the token itself.
+      // Granted scopes decoded from the fresh token (what the IdP gave,
+      // not what DOMAIN_SCOPES requested) — drives the role-home default
+      // below. Never logs the token itself.
+      let granted: string[] = [];
       try {
-        const granted = String(
+        granted = String(
           (decodePayload(t.access_token) as { scope?: unknown } | null)?.scope ?? "",
         )
           .split(" ")
@@ -98,9 +100,10 @@ export const useSessionStore = defineStore("session", () => {
       } catch {
         /* logging must never break login */
       }
-      // An explicit ?redirect= from the guard wins; otherwise home,
-      // which links every workflow the token can open.
-      const dest = redirect && redirect !== "/" ? redirect : "/";
+      // An explicit ?redirect= from the guard wins; otherwise the role
+      // home for the granted scopes (catalogue / queue / pickups).
+      const dest =
+        redirect && redirect !== "/" ? redirect : homeFor(granted);
       router.push(dest).catch(() => {});
     });
   }

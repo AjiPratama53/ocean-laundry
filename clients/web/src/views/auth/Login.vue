@@ -55,7 +55,13 @@ async function submit() {
 
     busy.value = true
     try {
-        await session.loginWithPassword(username.value, password.value, String(route.query.redirect ?? '/catalogue'))
+        // Pass the guard's ?redirect= through untouched (it may be absent):
+        // the store sends explicit redirects to their target and falls back
+        // to the role home for the granted scopes. Defaulting here would
+        // hide "no redirect" from the store and break role landing.
+        const redirect =
+            typeof route.query.redirect === 'string' ? route.query.redirect : undefined
+        await session.loginWithPassword(username.value, password.value, redirect)
     }
     catch (e) {
         if (e instanceof AuthError && e.code === 'invalid_grant') {
