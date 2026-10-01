@@ -45,7 +45,7 @@
                 <p v-else>Paket Laundry</p>
                 <v-skeleton-loader v-if="viewState.kind === 'loading'" type="text" width="15rem"
                     class=" bg-transparent" />
-                <p v-else class="font-bold">{{ pkg?.name ?? order?.packageId }} (Rp {{ formatBalance(pkg?.price) }}/kg)
+                <p v-else class="font-bold">{{ pkg?.name }} (Rp {{ formatBalance(pkg?.price) }}/kg)
                 </p>
             </v-row>
             <v-divider />

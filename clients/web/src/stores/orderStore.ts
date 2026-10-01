@@ -165,7 +165,7 @@ export const useOrderStore = defineStore("orders", function () {
     placeOrder,
     pickup,
     weigh,
-    wash,
+    // wash,
     ready,
     deliver,
     complete,
