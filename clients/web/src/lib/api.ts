@@ -617,8 +617,8 @@ export const weighOrder = (
   weightGrams: number,
   etag?: string | null,
 ) => transition(id, "weigh", { weightGrams }, etag);
-// export const washOrder = (id: string, etag?: string | null) =>
-//   transition(id, "wash", {}, etag);
+export const washOrder = (id: string, etag?: string | null) =>
+  transition(id, "wash", {}, etag);
 export const readyOrder = (id: string, etag?: string | null) =>
   transition(id, "ready", {}, etag);
 export const deliverOrder = (id: string, etag?: string | null) =>

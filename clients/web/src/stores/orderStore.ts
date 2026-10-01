@@ -9,7 +9,7 @@ import {
   newIdempotencyKey,
   pickupOrder,
   readyOrder,
-  // washOrder,
+  washOrder,
   weighOrder,
   type Order,
   type OrderStatus,
@@ -119,11 +119,11 @@ export const useOrderStore = defineStore("orders", function () {
     upsert(r.data);
     return r;
   }
-  // async function wash(id: string, etag?: string | null) {
-  //   const r = await washOrder(id, etag);
-  //   upsert(r.data);
-  //   return r;
-  // }
+  async function wash(id: string, etag?: string | null) {
+    const r = await washOrder(id, etag);
+    upsert(r.data);
+    return r;
+  }
   async function ready(id: string, etag?: string | null) {
     const r = await readyOrder(id, etag);
     upsert(r.data);
@@ -165,7 +165,7 @@ export const useOrderStore = defineStore("orders", function () {
     placeOrder,
     pickup,
     weigh,
-    // wash,
+    wash,
     ready,
     deliver,
     complete,
