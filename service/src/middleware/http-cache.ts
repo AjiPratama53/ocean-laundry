@@ -68,13 +68,13 @@ export function sendConditional(
   etag: string,
 ): boolean {
   const inm = req.headers["if-none-match"];
-  if (typeof inm === "string" && inm.split(",").map((s) => s.trim()).includes(etag)) {
-    res.set("ETag", etag);
-    return void res.sendStatus(304) as unknown as boolean;
-  }
-  if (inm === "*") {
-    res.set("ETag", etag);
-    return void res.sendStatus(304) as unknown as boolean;
+  const cleanEtag = etag.replace(/^W\//i, "");
+  if (typeof inm === "string") {
+    const tags = inm.split(",").map((s) => s.trim().replace(/^W\//i, ""));
+    if (tags.includes("*") || tags.includes(cleanEtag)) {
+      res.set("ETag", etag);
+      return void res.sendStatus(304) as unknown as boolean;
+    }
   }
   res.set("ETag", etag);
   res.status(200).json(body);
@@ -95,8 +95,9 @@ export function checkPrecondition(
   if (im === undefined) return false;
   const tags = String(im)
     .split(",")
-    .map((s) => s.trim());
-  if (tags.includes("*") || tags.includes(currentEtag)) return false;
+    .map((s) => s.trim().replace(/^W\//i, ""));
+  const cleanCurrent = currentEtag.replace(/^W\//i, "");
+  if (tags.includes("*") || tags.includes(cleanCurrent)) return false;
   sendProblem(
     res,
     412,
