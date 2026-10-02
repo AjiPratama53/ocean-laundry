@@ -47,19 +47,23 @@ Initial contract for OceanLaundry API.
 
 ## 2026-04-09 - v0.2.2
 
-- Removed `paid` status from orders resource due to redundancy. 
+- Removed `paid` status from orders resource due to redundancy.
 - Added `cancelled` status reachable from `placed` and `awaiting_payments` status.
 
 ## 2026-04-09 - v0.2.3
+
 - Added `updatedAt` column in order
 
 ## [0.3.0] — 2026-09-19
+
 ### Changed — BREAKING
+
 - All `/v1/**` operations now require an access token with the scope
   stated on that operation. Missing/invalid tokens → `401`; wrong
   scope → `403`.
 
 ### Added
+
 - `oauth2` security scheme (Authorization Code + PKCE) with eight
   scopes: `packages:read/write`, `orders:read/write/fulfil`,
   `deliveries:write`, `payments:read/write`.
@@ -67,3 +71,13 @@ Initial contract for OceanLaundry API.
   job, scoped to `orders:read`/`orders:write` only.
 - `401`/`403` responses on every protected operation.
 - `updatedAt` field on `Order`, tracking the last status transition.
+
+## 2026-09-29 - v0.4.0
+
+- Added all UI views and components for client web.
+- Added routing for client web.
+
+## 2026-01-10 - v0.4.1
+
+- Fixd routing and end-to-end workflow for each stakeholders (customer, staff, courier).
+- Finished client web implementation for deployment.
